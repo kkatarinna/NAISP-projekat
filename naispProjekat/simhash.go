@@ -1,5 +1,5 @@
 package main
-
+// 1 kom
 import (
 	"crypto/md5"
 	"encoding/hex"
