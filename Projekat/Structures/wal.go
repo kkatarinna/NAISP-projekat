@@ -1,6 +1,5 @@
 
-package main
-
+package structures
 import (
 	"fmt"
 	"log"
@@ -60,38 +59,38 @@ type Record struct {
 	value []byte
 }
 
-func main() {
+// func main() {
 
-	// // deletes wal
-	// err := deleteWal()
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// fmt.Println("")
-
-
-	// //is wal empty
-	// res, _ := isWalEmpty()
-	// fmt.Println(res)
+// 	// // deletes wal
+// 	// err := deleteWal()
+// 	// if err != nil {
+// 	// 	log.Fatal(err)
+// 	// }
+// 	// fmt.Println("")
 
 
-	//append record
-	appendRecord(true, "key3", []byte("value3"))
+// 	// //is wal empty
+// 	// res, _ := isWalEmpty()
+// 	// fmt.Println(res)
+
+
+// 	//append record
+// 	appendRecord(true, "key3", []byte("value3"))
 	
 
-	//read
-	data, err := readAll()
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(data)
+// 	//read
+// 	data, err := readAll()
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	fmt.Println(data)
 
-}
+// }
 
 func readAll() ([]Record, error) {
 	allDataElem := []Record{}
 
-	ff, err := os.Open("wal")
+	ff, err := os.Open("./Data/wal/")
     if err != nil {
         return nil, err
     }
@@ -102,7 +101,7 @@ func readAll() ([]Record, error) {
     }
 
 	for _, file := range fileInfo {
-		filepath := "wal/" + file.Name()
+		filepath := "./Data/wal/" + file.Name()
 		f, err := os.OpenFile(filepath, os.O_RDWR | os.O_CREATE, 0644)
 		if err != nil {log.Fatal(err)}
 		dataElem, err := read(f)
@@ -181,7 +180,7 @@ func appendRecord(tombStone bool, key string, value []byte) {
 	}
 	//convert data to binary
 	dataBinary := dataToBinary(tombStone, key, value)
-	completeActiveFile := "wal/" + activeFile
+	completeActiveFile := "./Data/wal/" + activeFile
 
 	//append
 	f, err := os.OpenFile(completeActiveFile, os.O_RDWR | os.O_CREATE, 0644)
@@ -224,7 +223,7 @@ func dataToBinary(tombStone bool, key string, value []byte) ([]byte) {
 
 func listAllFiles() ([]string, error) {
 	var allFiles []string
-	files, err := ioutil.ReadDir("wal/")
+	files, err := ioutil.ReadDir("./Data/wal/")
     if err != nil {
         return nil, err
     }
@@ -256,7 +255,7 @@ func getActiveFile() (string, error) {
 	if len(allFiles) == 0 {
 		return "wal_1.log",  nil
 	} else {
-		activeFile := "wal/" + allFiles[len(allFiles)-1]
+		activeFile := "./Data/wal/" + allFiles[len(allFiles)-1]
 
 		if getNumberOfRecords(activeFile) < 3 {
 			return allFiles[len(allFiles)-1], nil
@@ -283,7 +282,7 @@ func appendData(file *os.File, data []byte) error {
 }
 
 func deleteWal() error {
-	d, err := os.Open("wal/")
+	d, err := os.Open("./Data/wal/")
     if err != nil {
         return err
     }
@@ -293,7 +292,7 @@ func deleteWal() error {
         return err
     }
     for _, name := range names {
-        err = os.RemoveAll(filepath.Join("wal/", name))
+        err = os.RemoveAll(filepath.Join("./Data/wal/", name))
         if err != nil {
             return err
         }
@@ -302,7 +301,7 @@ func deleteWal() error {
 }
 
 func isWalEmpty() (bool, error) {
-	f, err := os.Open("wal/")
+	f, err := os.Open("./Data/wal/")
     if err != nil {
         return false, err
     }

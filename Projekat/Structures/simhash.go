@@ -1,4 +1,4 @@
-package main
+package structures
 // 1 kom
 import (
 	"crypto/md5"
@@ -24,15 +24,15 @@ func ToBinary(s string) string {
 	return res
 }
 
-func main() {
-	// fmt.Println(GetMD5Hash("hello"))
-	// fmt.Println(ToBinary(GetMD5Hash("hello")))
+// func main() {
+// 	// fmt.Println(GetMD5Hash("hello"))
+// 	// fmt.Println(ToBinary(GetMD5Hash("hello")))
 
-	file1 := loadFile("simhash/tekst1.txt")
-	file2 := loadFile("simhash/tekst2.txt")
-	counter := HammingDifference(file1, file2)
-	fmt.Println(counter)
-}
+// 	file1 := loadFile("simhash/tekst1.txt")
+// 	file2 := loadFile("simhash/tekst2.txt")
+// 	counter := HammingDifference(file1, file2)
+// 	fmt.Println(counter)
+// }
 
 func loadFile(file string) ([256]int) {
 	words := []string{}
