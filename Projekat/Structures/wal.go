@@ -1,19 +1,19 @@
-
 package structures
+
 import (
-	"fmt"
+	"bytes"
+	"encoding/binary"
+	"io"
+	"io/ioutil"
 	"log"
 	"os"
-	"time"
-	"encoding/binary"
-	"bytes"
-	"io/ioutil"
-	"io"
-	"strconv"
 	"path/filepath"
+	"strconv"
+	"time"
+
+	"hash/crc32"
 
 	"github.com/edsrzf/mmap-go"
-	"hash/crc32"
 )
 
 /*
@@ -30,19 +30,18 @@ import (
 */
 
 const (
-	CRC_SIZE = 4
-	TIMESTAMP_SIZE = 8
-	TOMBSTONE_SIZE = 1
-	KEY_SIZE_SIZE = 8
+	CRC_SIZE        = 4
+	TIMESTAMP_SIZE  = 8
+	TOMBSTONE_SIZE  = 1
+	KEY_SIZE_SIZE   = 8
 	VALUE_SIZE_SIZE = 8
-	
-	CRC_START = 0
-	TIMESTAMP_START = CRC_START + CRC_SIZE
-	TOMBSTONE_START = TIMESTAMP_START + TIMESTAMP_SIZE
-	KEY_SIZE_START = TOMBSTONE_START + TOMBSTONE_SIZE
-	VALUE_SIZE_START = KEY_SIZE_START + KEY_SIZE_SIZE
-	KEY_START = VALUE_SIZE_START + VALUE_SIZE_SIZE
 
+	CRC_START        = 0
+	TIMESTAMP_START  = CRC_START + CRC_SIZE
+	TOMBSTONE_START  = TIMESTAMP_START + TIMESTAMP_SIZE
+	KEY_SIZE_START   = TOMBSTONE_START + TOMBSTONE_SIZE
+	VALUE_SIZE_START = KEY_SIZE_START + KEY_SIZE_SIZE
+	KEY_START        = VALUE_SIZE_START + VALUE_SIZE_SIZE
 )
 
 func CRC32(data []byte) uint32 {
@@ -50,13 +49,13 @@ func CRC32(data []byte) uint32 {
 }
 
 type Record struct {
-	crc uint32
+	crc       uint32
 	timestamp uint64
 	tombstone bool
-	keysize uint64
+	keysize   uint64
 	valuesize uint64
-	key string
-	value []byte
+	key       string
+	value     []byte
 }
 
 // func main() {
@@ -68,15 +67,12 @@ type Record struct {
 // 	// }
 // 	// fmt.Println("")
 
-
 // 	// //is wal empty
 // 	// res, _ := isWalEmpty()
 // 	// fmt.Println(res)
 
-
 // 	//append record
 // 	appendRecord(true, "key3", []byte("value3"))
-	
 
 // 	//read
 // 	data, err := readAll()
@@ -91,19 +87,21 @@ func readAll() ([]Record, error) {
 	allDataElem := []Record{}
 
 	ff, err := os.Open("./Data/wal/")
-    if err != nil {
-        return nil, err
-    }
-    fileInfo, err := ff.Readdir(-1)
-    ff.Close()
-    if err != nil {
-        return nil, err
-    }
+	if err != nil {
+		return nil, err
+	}
+	fileInfo, err := ff.Readdir(-1)
+	ff.Close()
+	if err != nil {
+		return nil, err
+	}
 
 	for _, file := range fileInfo {
 		filepath := "./Data/wal/" + file.Name()
-		f, err := os.OpenFile(filepath, os.O_RDWR | os.O_CREATE, 0644)
-		if err != nil {log.Fatal(err)}
+		f, err := os.OpenFile(filepath, os.O_RDWR|os.O_CREATE, 0644)
+		if err != nil {
+			log.Fatal(err)
+		}
 		dataElem, err := read(f)
 		if err != nil {
 			return nil, err
@@ -116,59 +114,64 @@ func readAll() ([]Record, error) {
 
 func read(file *os.File) ([]Record, error) {
 	dataElem := []Record{}
-    
+
 	mmapf, err := mmap.Map(file, mmap.RDONLY, 0)
-	if err != nil {return nil, err}
+	if err != nil {
+		return nil, err
+	}
 	defer mmapf.Unmap()
 	result := make([]byte, len(mmapf))
 	copy(result, mmapf)
 
 	fileLength, err := fileLen(file)
-	if err != nil {return nil, err}
+	if err != nil {
+		return nil, err
+	}
 
 	start := 0
 	for {
-		crc := binary.BigEndian.Uint32(result[start:start+4])
+		crc := binary.BigEndian.Uint32(result[start : start+4])
 
-		timestamp := binary.BigEndian.Uint64(result[start+4:start+12])
+		timestamp := binary.BigEndian.Uint64(result[start+4 : start+12])
 
 		var tombstone bool
-		buf := bytes.NewBuffer(result[start+12:start+13])
+		buf := bytes.NewBuffer(result[start+12 : start+13])
 		tombstoneByte, _ := binary.ReadUvarint(buf)
 		if tombstoneByte == 1 {
 			tombstone = true
 		}
 		// tombstone := result[12]
-		
-		keySize := binary.BigEndian.Uint64(result[start+13:start+21])
 
-		valueSize := binary.BigEndian.Uint64(result[start+21:start+29])
-		
-		key := string(result[start+29:start+29+int(keySize)])
-		value := []byte(string(result[start+29+int(keySize):start+29+int(keySize)+int(valueSize)]))
+		keySize := binary.BigEndian.Uint64(result[start+13 : start+21])
+
+		valueSize := binary.BigEndian.Uint64(result[start+21 : start+29])
+
+		key := string(result[start+29 : start+29+int(keySize)])
+		value := []byte(string(result[start+29+int(keySize) : start+29+int(keySize)+int(valueSize)]))
 
 		//test if data is damaged
 		crcTest := CRC32(value)
 		if crcTest != crc {
 			panic("error occured")
 		}
-		
-		currentElem := Record{crc: crc, timestamp: timestamp, tombstone: tombstone, keysize: keySize, valuesize: valueSize, key: key, value: value }
+
+		currentElem := Record{crc: crc, timestamp: timestamp, tombstone: tombstone, keysize: keySize, valuesize: valueSize, key: key, value: value}
 		dataElem = append(dataElem, currentElem)
 
-		start = start+29+int(keySize)+int(valueSize)
+		start = start + 29 + int(keySize) + int(valueSize)
 		if start >= int(fileLength) {
 			break
 		}
 	}
-
 
 	return dataElem, nil
 }
 
 func fileLen(file *os.File) (int64, error) {
 	info, err := file.Stat()
-	if err != nil { return 0, err}
+	if err != nil {
+		return 0, err
+	}
 	return info.Size(), nil
 }
 
@@ -183,7 +186,7 @@ func appendRecord(tombStone bool, key string, value []byte) {
 	completeActiveFile := "./Data/wal/" + activeFile
 
 	//append
-	f, err := os.OpenFile(completeActiveFile, os.O_RDWR | os.O_CREATE, 0644)
+	f, err := os.OpenFile(completeActiveFile, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -195,7 +198,7 @@ func appendRecord(tombStone bool, key string, value []byte) {
 	}
 }
 
-func dataToBinary(tombStone bool, key string, value []byte) ([]byte) {
+func dataToBinary(tombStone bool, key string, value []byte) []byte {
 	dataBinary := make([]byte, 29)
 
 	crc := CRC32(value)
@@ -205,38 +208,43 @@ func dataToBinary(tombStone bool, key string, value []byte) ([]byte) {
 
 	if tombStone {
 		n := binary.PutUvarint(dataBinary[TOMBSTONE_START:], 1)
-		if n < 0 {panic("error occured")}
+		if n < 0 {
+			panic("error occured")
+		}
 	} else {
 		n := binary.PutUvarint(dataBinary[TOMBSTONE_START:], 0)
-		if n < 0 {panic("error occured")}
+		if n < 0 {
+			panic("error occured")
+		}
 	}
-
 
 	binary.BigEndian.PutUint64(dataBinary[KEY_SIZE_START:], uint64(len([]byte(key))))
 	binary.BigEndian.PutUint64(dataBinary[VALUE_SIZE_START:], uint64(len(value)))
 
 	dataToBeJoined := [][]byte{dataBinary, []byte(key), value}
 	dataJoined := bytes.Join(dataToBeJoined, []byte(""))
-	
+
 	return dataJoined
 }
 
 func listAllFiles() ([]string, error) {
 	var allFiles []string
 	files, err := ioutil.ReadDir("./Data/wal/")
-    if err != nil {
-        return nil, err
-    }
+	if err != nil {
+		return nil, err
+	}
 
-    for _, file := range files {
+	for _, file := range files {
 		allFiles = append(allFiles, file.Name())
-    }
+	}
 	return allFiles, nil
 }
 
-func getNumberOfRecords(activeFile string) (int) {
+func getNumberOfRecords(activeFile string) int {
 	f, err := os.OpenFile(activeFile, os.O_RDWR, 0644)
-	if err != nil {log.Fatal(err)}
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	data, err := read(f)
 	defer f.Close()
@@ -248,12 +256,12 @@ func getNumberOfRecords(activeFile string) (int) {
 
 func getActiveFile() (string, error) {
 	allFiles, err := listAllFiles()
-    if err != nil {
-        return "", err
-    }
-	
+	if err != nil {
+		return "", err
+	}
+
 	if len(allFiles) == 0 {
-		return "wal_1.log",  nil
+		return "wal_1.log", nil
 	} else {
 		activeFile := "./Data/wal/" + allFiles[len(allFiles)-1]
 
@@ -264,17 +272,23 @@ func getActiveFile() (string, error) {
 		fileNumber := strconv.FormatInt(int64(len(allFiles)+1), 10)
 		newFileName := "wal_" + fileNumber + ".log"
 		return newFileName, nil
-		
+
 	}
 }
 
 func appendData(file *os.File, data []byte) error {
 	fileLength, err := fileLen(file)
-	if err != nil {return err}
+	if err != nil {
+		return err
+	}
 	err = file.Truncate(fileLength + int64(len(data)))
-	if err != nil {return err}
+	if err != nil {
+		return err
+	}
 	mmapf, err := mmap.Map(file, mmap.RDWR, 0)
-	if err != nil {return err}
+	if err != nil {
+		return err
+	}
 	defer mmapf.Unmap()
 	copy(mmapf[fileLength:], data)
 	mmapf.Flush()
@@ -283,33 +297,33 @@ func appendData(file *os.File, data []byte) error {
 
 func deleteWal() error {
 	d, err := os.Open("./Data/wal/")
-    if err != nil {
-        return err
-    }
-    defer d.Close()
-    names, err := d.Readdirnames(-1)
-    if err != nil {
-        return err
-    }
-    for _, name := range names {
-        err = os.RemoveAll(filepath.Join("./Data/wal/", name))
-        if err != nil {
-            return err
-        }
-    }
-    return nil
+	if err != nil {
+		return err
+	}
+	defer d.Close()
+	names, err := d.Readdirnames(-1)
+	if err != nil {
+		return err
+	}
+	for _, name := range names {
+		err = os.RemoveAll(filepath.Join("./Data/wal/", name))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func isWalEmpty() (bool, error) {
 	f, err := os.Open("./Data/wal/")
-    if err != nil {
-        return false, err
-    }
-    defer f.Close()
+	if err != nil {
+		return false, err
+	}
+	defer f.Close()
 
-    _, err = f.Readdirnames(1)
-    if err == io.EOF {
-        return true, nil
-    }
-    return false, err
+	_, err = f.Readdirnames(1)
+	if err == io.EOF {
+		return true, nil
+	}
+	return false, err
 }
