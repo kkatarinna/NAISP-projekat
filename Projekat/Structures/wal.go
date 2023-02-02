@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"time"
+	. "projekat/Structures/SSTable"
 
 	"hash/crc32"
 
@@ -22,7 +23,7 @@ import (
    +---------------+-----------------+---------------+---------------+-----------------+-...-+--...--+
    CRC = 32bit hash computed over the payload using CRC
    Key Size = Length of the Key data
-   Tombstone = If this record was deleted and has a value
+   Tombstone = If this Record was deleted and has a value
    Value Size = Length of the Value data
    Key = Key data
    Value = Value data
@@ -44,19 +45,19 @@ const (
 	KEY_START        = VALUE_SIZE_START + VALUE_SIZE_SIZE
 )
 
-func CRC32(data []byte) uint32 {
+func CRC32Wal(data []byte) uint32 {
 	return crc32.ChecksumIEEE(data)
 }
 
-type Record struct {
-	crc       uint32
-	timestamp uint64
-	tombstone bool
-	keysize   uint64
-	valuesize uint64
-	key       string
-	value     []byte
-}
+// type Record struct {
+// 	CrcW       uint32
+// 	timestampW uint64
+// 	tombstoneW bool
+// 	keysizeW   uint64
+// 	valuesizeW uint64
+// 	keyW       string
+// 	valueW     []byte
+// }
 
 // func main() {
 
@@ -71,11 +72,11 @@ type Record struct {
 // 	// res, _ := isWalEmpty()
 // 	// fmt.Println(res)
 
-// 	//append record
-// 	appendRecord(true, "key3", []byte("value3"))
+// 	//append Record
+// 	AppendRecordWal(true, "key3", []byte("value3"))
 
 // 	//read
-// 	data, err := readAll()
+// 	data, err := ReadAllWal()
 // 	if err != nil {
 // 		log.Fatal(err)
 // 	}
@@ -83,7 +84,7 @@ type Record struct {
 
 // }
 
-func readAll() ([]Record, error) {
+func ReadAllWal() ([]Record, error) {
 	allDataElem := []Record{}
 
 	ff, err := os.Open("./Data/wal/")
@@ -102,7 +103,7 @@ func readAll() ([]Record, error) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		dataElem, err := read(f)
+		dataElem, err := readWal(f)
 		if err != nil {
 			return nil, err
 		}
@@ -112,7 +113,7 @@ func readAll() ([]Record, error) {
 	return allDataElem, nil
 }
 
-func read(file *os.File) ([]Record, error) {
+func readWal(file *os.File) ([]Record, error) {
 	dataElem := []Record{}
 
 	mmapf, err := mmap.Map(file, mmap.RDONLY, 0)
@@ -123,7 +124,7 @@ func read(file *os.File) ([]Record, error) {
 	result := make([]byte, len(mmapf))
 	copy(result, mmapf)
 
-	fileLength, err := fileLen(file)
+	fileLength, err := fileLenWal(file)
 	if err != nil {
 		return nil, err
 	}
@@ -150,12 +151,12 @@ func read(file *os.File) ([]Record, error) {
 		value := []byte(string(result[start+29+int(keySize) : start+29+int(keySize)+int(valueSize)]))
 
 		//test if data is damaged
-		crcTest := CRC32(value)
+		crcTest := CRC32Wal(value)
 		if crcTest != crc {
 			panic("error occured")
 		}
 
-		currentElem := Record{crc: crc, timestamp: timestamp, tombstone: tombstone, keysize: keySize, valuesize: valueSize, key: key, value: value}
+		currentElem := Record{Crc: crc, Timestamp: timestamp, Tombstone: tombstone, Keysize: keySize, Valuesize: valueSize, Key: key, Value: value}
 		dataElem = append(dataElem, currentElem)
 
 		start = start + 29 + int(keySize) + int(valueSize)
@@ -167,7 +168,7 @@ func read(file *os.File) ([]Record, error) {
 	return dataElem, nil
 }
 
-func fileLen(file *os.File) (int64, error) {
+func fileLenWal(file *os.File) (int64, error) {
 	info, err := file.Stat()
 	if err != nil {
 		return 0, err
@@ -175,14 +176,14 @@ func fileLen(file *os.File) (int64, error) {
 	return info.Size(), nil
 }
 
-func appendRecord(tombStone bool, key string, value []byte) {
+func AppendRecordWal(tombStone bool, key string, value []byte) {
 	//find active file
 	activeFile, err := getActiveFile()
 	if err != nil {
 		log.Fatal(err)
 	}
 	//convert data to binary
-	dataBinary := dataToBinary(tombStone, key, value)
+	dataBinary := dataToBinaryWal(tombStone, key, value)
 	completeActiveFile := "./Data/wal/" + activeFile
 
 	//append
@@ -192,16 +193,16 @@ func appendRecord(tombStone bool, key string, value []byte) {
 	}
 	defer f.Close()
 
-	err = appendData(f, dataBinary)
+	err = appendDataWal(f, dataBinary)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func dataToBinary(tombStone bool, key string, value []byte) []byte {
+func dataToBinaryWal(tombStone bool, key string, value []byte) []byte {
 	dataBinary := make([]byte, 29)
 
-	crc := CRC32(value)
+	crc := CRC32Wal(value)
 	timestamp := time.Now().Unix()
 	binary.BigEndian.PutUint32(dataBinary[CRC_START:], crc)
 	binary.BigEndian.PutUint64(dataBinary[TIMESTAMP_START:], uint64(timestamp))
@@ -227,7 +228,7 @@ func dataToBinary(tombStone bool, key string, value []byte) []byte {
 	return dataJoined
 }
 
-func listAllFiles() ([]string, error) {
+func listAllFilesWal() ([]string, error) {
 	var allFiles []string
 	files, err := ioutil.ReadDir("./Data/wal/")
 	if err != nil {
@@ -240,13 +241,13 @@ func listAllFiles() ([]string, error) {
 	return allFiles, nil
 }
 
-func getNumberOfRecords(activeFile string) int {
+func getNumberOfRecordsWal(activeFile string) int {
 	f, err := os.OpenFile(activeFile, os.O_RDWR, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	data, err := read(f)
+	data, err := readWal(f)
 	defer f.Close()
 	if err != nil {
 		log.Fatal(err)
@@ -255,7 +256,7 @@ func getNumberOfRecords(activeFile string) int {
 }
 
 func getActiveFile() (string, error) {
-	allFiles, err := listAllFiles()
+	allFiles, err := listAllFilesWal()
 	if err != nil {
 		return "", err
 	}
@@ -265,7 +266,7 @@ func getActiveFile() (string, error) {
 	} else {
 		activeFile := "./Data/wal/" + allFiles[len(allFiles)-1]
 
-		if getNumberOfRecords(activeFile) < 3 {
+		if getNumberOfRecordsWal(activeFile) < 3 {
 			return allFiles[len(allFiles)-1], nil
 		}
 
@@ -276,8 +277,8 @@ func getActiveFile() (string, error) {
 	}
 }
 
-func appendData(file *os.File, data []byte) error {
-	fileLength, err := fileLen(file)
+func appendDataWal(file *os.File, data []byte) error {
+	fileLength, err := fileLenWal(file)
 	if err != nil {
 		return err
 	}
@@ -295,7 +296,7 @@ func appendData(file *os.File, data []byte) error {
 	return nil
 }
 
-func deleteWal() error {
+func DeleteWal() error {
 	d, err := os.Open("./Data/wal/")
 	if err != nil {
 		return err
@@ -314,7 +315,7 @@ func deleteWal() error {
 	return nil
 }
 
-func isWalEmpty() (bool, error) {
+func IsWalEmpty() (bool, error) {
 	f, err := os.Open("./Data/wal/")
 	if err != nil {
 		return false, err

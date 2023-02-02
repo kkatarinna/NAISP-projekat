@@ -1,6 +1,7 @@
 package structures
 
 import (
+	"log"
 	"fmt"
 	. "projekat/Structures/SSTable"
 	"time"
@@ -14,7 +15,7 @@ type Config struct {
 }
 
 type Memtable struct {
-	skiplist     *SkipList
+	Skiplist     *SkipList
 	trashold     uint64
 	size         uint64
 	memtableSize uint64
@@ -22,22 +23,55 @@ type Memtable struct {
 }
 
 func NewMemPar(c *Config) *Memtable {
+	empty, err := IsWalEmpty()
+	if err != nil {
+		log.Fatal(err)
+	}
+	mem := &Memtable{Skiplist: CreateSkipList(), memtableSize: c.MemtableSize, walSize: c.WalSize, trashold: c.Trashold, size: 0}
+	if empty {
+		return mem
+	}
 
-	mem := &Memtable{skiplist: CreateSkipList(), memtableSize: c.MemtableSize, walSize: c.WalSize, trashold: c.Trashold, size: 0}
+	data, err := ReadAllWal()
+	if err != nil {
+		log.Fatal(err)
+	}
+	mem.ReconstructWal(data)
+
 	return mem
-
 }
 
 func NewMem() *Memtable {
+	empty, err := IsWalEmpty()
+	if err != nil {
+		log.Fatal(err)
+	}
+	mem := &Memtable{Skiplist: CreateSkipList(), memtableSize: 10, walSize: 10, trashold: 30, size: 0}
+	if empty {
+		return mem
+	}
+	data, err := ReadAllWal()
+	if err != nil {
+		log.Fatal(err)
+	}
+	mem.ReconstructWal(data)
+	
 
-	mem := &Memtable{skiplist: CreateSkipList(), memtableSize: 10, walSize: 10, trashold: 30, size: 0}
 	return mem
+}
 
+func (mem *Memtable) ReconstructWal(data []Record) {
+	for _, rec := range data {
+		success := mem.Skiplist.AddRecord(rec)
+		if !success {
+			panic("error occured")
+		} 
+	}
 }
 
 func (mem *Memtable) Insert(key string, value []byte) bool {
 
-	node := mem.skiplist.find(key)
+	node := mem.Skiplist.find(key)
 
 	if node != nil {
 
@@ -47,7 +81,7 @@ func (mem *Memtable) Insert(key string, value []byte) bool {
 		node.tombstone = false
 
 	} else {
-		mem.skiplist.Add(key, value)
+		mem.Skiplist.Add(key, value)
 		mem.size++
 	}
 
@@ -60,7 +94,7 @@ func (mem *Memtable) Insert(key string, value []byte) bool {
 
 func (mem *Memtable) Find(key string) []byte {
 
-	node := mem.skiplist.find(key)
+	node := mem.Skiplist.find(key)
 	var rec *Record
 
 	if node != nil {
@@ -84,7 +118,7 @@ func (mem *Memtable) Find(key string) []byte {
 
 func (mem *Memtable) Delete(key string) {
 
-	node := mem.skiplist.find(key)
+	node := mem.Skiplist.find(key)
 
 	if node != nil {
 
@@ -92,8 +126,8 @@ func (mem *Memtable) Delete(key string) {
 			node.tombstone = true
 		}
 	} else {
-		mem.skiplist.Add(key, make([]byte, 0))
-		mem.skiplist.logicDelete(key)
+		mem.Skiplist.Add(key, make([]byte, 0))
+		mem.Skiplist.logicDelete(key)
 		mem.size++
 	}
 
@@ -104,7 +138,7 @@ func (mem *Memtable) Flush() {
 	sst := NewSSTable()
 
 	fmt.Println(mem.size)
-	listNode := mem.skiplist.print()
+	listNode := mem.Skiplist.Print()
 
 	listRec := make([]*Record, 0)
 
@@ -118,6 +152,6 @@ func (mem *Memtable) Flush() {
 	sst.Write_table(&listRec)
 
 	mem.size = 0
-	mem.skiplist = CreateSkipList()
+	mem.Skiplist = CreateSkipList()
 
 }

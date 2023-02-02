@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"time"
+	. "projekat/Structures/SSTable"
 )
 
 const MAX_HEIGHT = 16
@@ -55,6 +56,59 @@ func CreateSkipList() *SkipList {
 	sln := SkipListNode{key: "sentinel", timestamp: uint64(timestamp), tombstone: false, value: value, next: next}
 	sl := SkipList{height: 0, head: &sln}
 	return &sl
+}
+
+func (sl SkipList) AddRecord(rec Record) bool {
+	found := sl.find(rec.Key)
+	if found != nil {
+		found.value = rec.Value
+		found.tombstone = rec.Tombstone
+		found.timestamp = rec.Timestamp
+		return true
+	}
+	level := sl.roll()
+	next := make([]*SkipListNode, level+1)
+	node := SkipListNode{key: rec.Key, tombstone: rec.Tombstone, timestamp: rec.Timestamp, value: rec.Value, next: next}
+	here := sl.head
+	i := 1
+	for {
+		//pocetak i kraj skip liste moze da bude nil
+		if here.next[len(here.next)-i] == nil {
+			if level >= len(here.next)-i {
+				here.next[len(here.next)-i] = &node
+			}
+			i++
+			if i > len(here.next) {
+				return true
+			}
+			continue
+		}
+		//ako nije pocetak ili kraj liste
+		if here.next[len(here.next)-i] != nil {
+			//ako je kljuc novog elemnta veci predji na sledeci elemnti
+			if rec.Key > here.next[len(here.next)-i].key {
+				here = here.next[len(here.next)-i]
+				i = 1
+				continue
+			}
+			if rec.Key == here.next[len(here.next)-i].key {
+				here.next[len(here.next)-i].tombstone = false
+				here.next[len(here.next)-i].value = rec.Value
+				return true
+			}
+			//ako je kljuc manji prevezi za taj nivo ako je potrebno i spusti se nivo
+			if rec.Key < here.next[len(here.next)-i].key {
+				if level >= len(here.next)-i {
+					node.next[len(here.next)-i] = here.next[len(here.next)-i]
+					here.next[len(here.next)-i] = &node
+				}
+				i++
+			}
+		}
+		if i > len(here.next) {
+			return true
+		}
+	}
 }
 
 // dodavanje cvora kljuca string i vrednosti []byte
@@ -231,7 +285,7 @@ func (sl SkipList) logicDelete(key string) bool {
 	}
 }
 
-func (sl SkipList) print() *[]*SkipListNode {
+func (sl SkipList) Print() *[]*SkipListNode {
 
 	list := make([]*SkipListNode, 0)
 

@@ -135,13 +135,13 @@ func getIndex(item string, i int, m uint64, fn HashWithSeed) uint64 {
 	return index
 }
 
-func main() {
-	fmt.Println("Probanje bloom filtera")
-	blum := NewBloomFilter(5, 0.052)
-	blum.add("kata")
-	blum.add("nidza")
-	blum.add("deterdzent")
-	blum.add("steva")
-	fmt.Println(blum.set)
-	fmt.Println(blum.check("deterdzent"))
-}
+// func main() {
+// 	fmt.Println("Probanje bloom filtera")
+// 	blum := NewBloomFilter(5, 0.052)
+// 	blum.add("kata")
+// 	blum.add("nidza")
+// 	blum.add("deterdzent")
+// 	blum.add("steva")
+// 	fmt.Println(blum.set)
+// 	fmt.Println(blum.check("deterdzent"))
+// }

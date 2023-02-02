@@ -1,7 +1,6 @@
 package structures
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -15,27 +14,27 @@ type tokenBucket struct {
 	tokens int64
 }
 
-func main() {
+// func main() {
 
-	//init first bucket, will be done from main
-	timestamp := time.Now().Unix()
-	tokenbucket := &tokenBucket{time: timestamp, tokens: TOKENS_NUMBER}
+// 	//init first bucket, will be done from main
+// 	timestamp := time.Now().Unix()
+// 	tokenbucket := &tokenBucket{time: timestamp, tokens: TOKENS_NUMBER}
 
-	for {
-		var input string
-		fmt.Println("1. send\n2. exit: ")
-		fmt.Scanln(&input)
-		if input == "1"{
-			success := checkTokenBucket(tokenbucket)
-			fmt.Println(success)
-		} else if input == "2" {
-			break
-		}
-	}
+// 	for {
+// 		var input string
+// 		fmt.Println("1. send\n2. exit: ")
+// 		fmt.Scanln(&input)
+// 		if input == "1"{
+// 			success := CheckTokenBucket(tokenbucket)
+// 			fmt.Println(success)
+// 		} else if input == "2" {
+// 			break
+// 		}
+// 	}
 	
-}
+// }
 
-func checkTokenBucket(tbucket *tokenBucket) (bool) {
+func CheckTokenBucket(tbucket *tokenBucket) (bool) {
 	now := time.Now().Unix()
 	difference := now - tbucket.time
 

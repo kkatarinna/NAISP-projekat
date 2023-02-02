@@ -28,13 +28,13 @@ func ToBinary(s string) string {
 // 	// fmt.Println(GetMD5Hash("hello"))
 // 	// fmt.Println(ToBinary(GetMD5Hash("hello")))
 
-// 	file1 := loadFile("simhash/tekst1.txt")
-// 	file2 := loadFile("simhash/tekst2.txt")
+// 	file1 := LoadFile("simhash/tekst1.txt")
+// 	file2 := LoadFile("simhash/tekst2.txt")
 // 	counter := HammingDifference(file1, file2)
 // 	fmt.Println(counter)
 // }
 
-func loadFile(file string) ([256]int) {
+func LoadFile(file string) ([256]int) {
 	words := []string{}
 	weight := make(map[string]int)
 

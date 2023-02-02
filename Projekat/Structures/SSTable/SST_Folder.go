@@ -117,7 +117,7 @@ func (sst *SSTable) Write_table(list *[]*Record) {
 		sst.dataFile.write_record(element, fw)
 		size_after := fw.Available()
 
-		index := newIndex(element.keysize, element.Key, offset)
+		index := newIndex(element.Keysize, element.Key, offset)
 		index_list = append(index_list, index)
 
 		offset = uint64(size-size_after) + offset
