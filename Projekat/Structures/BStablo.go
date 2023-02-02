@@ -21,7 +21,7 @@ type Node struct {
 type Data struct{
 	tombstone bool
 	timestamp uint64
-	key int
+	key string
 	value []byte
 }
 
@@ -35,10 +35,7 @@ func CreateBTree(m int) BTree{
 //kljuc ne sme biti manji od 1
 //potrebno proslediti adresu drveta u koje treba ubaciti
 //vrati true/false ako je uspesno/neuspesno
-func (t BTree)Add(tree *BTree,key int,d []byte) bool{
-	if(key < 1){
-		return false
-	}
+func (t BTree)Add(tree *BTree,key string,d []byte) bool{
 	if(tree.root == nil){
 		timestamp := time.Now().Unix()
 		data := Data{key:key,value:d,tombstone:false,timestamp:uint64(timestamp)}
@@ -103,7 +100,7 @@ func (t BTree)Add(tree *BTree,key int,d []byte) bool{
 					rotatedLeft = true
 				}
 				if(rotatedLeft){
-					minKey := -1
+					minKey := ""
 					minValue := []byte{'0'}
 					if(node.datas[0].key > key){
 						minKey = key
@@ -117,7 +114,7 @@ func (t BTree)Add(tree *BTree,key int,d []byte) bool{
 							return node.datas[i].key < node.datas[j].key
 						})
 					}
-					if(minKey == -1){
+					if(minKey == ""){
 						panic("greska pri rotiranju u levo")
 					}
 					parent.datas[i-1].key = minKey
@@ -139,7 +136,7 @@ func (t BTree)Add(tree *BTree,key int,d []byte) bool{
 						rotatedRight = true
 					}
 					if(rotatedRight){
-						maxKey := -1
+						maxKey := ""
 						maxValue := []byte{'0'}
 						if(node.datas[len(node.datas)-1].key < key){
 							maxKey = key
@@ -153,7 +150,7 @@ func (t BTree)Add(tree *BTree,key int,d []byte) bool{
 								return node.datas[i].key < node.datas[j].key
 							})
 						}
-						if(maxKey == -1){
+						if(maxKey == ""){
 							panic("greska pri rotiranju u levo")
 						}
 						parent.datas[i].key = maxKey
@@ -245,10 +242,7 @@ func (t BTree)Add(tree *BTree,key int,d []byte) bool{
 //i vraca pokazivac na node gde se nalazi podatak(koristi meni za dodavanje)
 //ako ne nadje vratice false i []byte{'o'} 
 //posto nmp sta bi bila neka default vrednost za bajt
-func (tree BTree)Find(key int) (bool,[]byte,*Node,*Node){
-	if(key < 1){
-		return false, []byte{'0'},nil,nil
-	}
+func (tree BTree)Find(key string) (bool,[]byte,*Node,*Node){
 	if(tree.root == nil){
 		return false, []byte{'0'},nil,nil
 	}
@@ -310,7 +304,7 @@ func (tree BTree) PrintBTreeWidth(){
 	}
 }
 
-func (tree BTree) LogicDelete(key int) bool{
+func (tree BTree) LogicDelete(key string) bool{
 	found,_,here,_ := tree.Find(key)
 	fmt.Print("PRONADJENO JE ", found)
 	if(found == false){
@@ -328,15 +322,15 @@ func (tree BTree) LogicDelete(key int) bool{
 
 //func main(){
 //	tree := CreateBTree(3)
-//	tree.Add(&tree,1,[]byte{'n'})
-//	tree.Add(&tree,70,[]byte{'n'})
-//	tree.Add(&tree,10,[]byte{'n'})
-//	tree.Add(&tree,20,[]byte{'n'})
-//	tree.Add(&tree,100,[]byte{'n'})
-//	tree.Add(&tree,110,[]byte{'n'})
-//	tree.Add(&tree,30,[]byte{'n'})
-//	tree.Add(&tree,80,[]byte{'n'})
-//	tree.Add(&tree,90,[]byte{'n'})
-//	tree.Add(&tree,40,[]byte{'n'})
+//	tree.Add(&tree,"A",[]byte{'n'})
+//	tree.Add(&tree,"B",[]byte{'n'})
+//	tree.Add(&tree,"C",[]byte{'n'})
+//	tree.Add(&tree,"D",[]byte{'n'})
+//	tree.Add(&tree,"E",[]byte{'n'})
+//	tree.Add(&tree,"F",[]byte{'n'})
+//	tree.Add(&tree,"G",[]byte{'n'})
+//	tree.Add(&tree,"H",[]byte{'n'})
+//	tree.Add(&tree,"I",[]byte{'n'})
+//	tree.Add(&tree,"J",[]byte{'n'})
 //	tree.PrintBTreeWidth()
 //}
