@@ -50,14 +50,14 @@ func CRC32(data []byte) uint32 {
 	return crc32.ChecksumIEEE(data)
 }
 
-type segment struct {
+type Record struct {
 	crc uint32
 	timestamp uint64
-	tombstone uint64
+	tombstone bool
 	keysize uint64
 	valuesize uint64
 	key string
-	value string
+	value []byte
 }
 
 func main() {
@@ -75,27 +75,9 @@ func main() {
 	// fmt.Println(res)
 
 
-
-	//find active file
-	activeFile, err := getActiveFile()
-	if err != nil {
-		log.Fatal(err)
-	}
-	//convert data to binary
-	dataBinary := dataToBinary(0, "key2", "value2")
-	completeActiveFile := "wal/" + activeFile
-
-	//append
-	f, err := os.OpenFile(completeActiveFile, os.O_RDWR | os.O_CREATE, 0644)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer f.Close()
-
-	err = appendData(f, dataBinary)
-	if err != nil {
-		log.Fatal(err)
-	}
+	//append record
+	appendRecord(true, "key3", []byte("value3"))
+	
 
 	//read
 	data, err := readAll()
@@ -106,8 +88,8 @@ func main() {
 
 }
 
-func readAll() ([]segment, error) {
-	allDataElem := []segment{}
+func readAll() ([]Record, error) {
+	allDataElem := []Record{}
 
 	ff, err := os.Open("wal")
     if err != nil {
@@ -133,8 +115,8 @@ func readAll() ([]segment, error) {
 	return allDataElem, nil
 }
 
-func read(file *os.File) ([]segment, error) {
-	dataElem := []segment{}
+func read(file *os.File) ([]Record, error) {
+	dataElem := []Record{}
     
 	mmapf, err := mmap.Map(file, mmap.RDONLY, 0)
 	if err != nil {return nil, err}
@@ -151,23 +133,28 @@ func read(file *os.File) ([]segment, error) {
 
 		timestamp := binary.BigEndian.Uint64(result[start+4:start+12])
 
+		var tombstone bool
 		buf := bytes.NewBuffer(result[start+12:start+13])
-		tombstone, _ := binary.ReadUvarint(buf)
+		tombstoneByte, _ := binary.ReadUvarint(buf)
+		if tombstoneByte == 1 {
+			tombstone = true
+		}
+		// tombstone := result[12]
 		
 		keySize := binary.BigEndian.Uint64(result[start+13:start+21])
 
 		valueSize := binary.BigEndian.Uint64(result[start+21:start+29])
 		
 		key := string(result[start+29:start+29+int(keySize)])
-		value := string(result[start+29+int(keySize):start+29+int(keySize)+int(valueSize)])
+		value := []byte(string(result[start+29+int(keySize):start+29+int(keySize)+int(valueSize)]))
 
 		//test if data is damaged
-		crcTest := CRC32([]byte(value))
+		crcTest := CRC32(value)
 		if crcTest != crc {
 			panic("error occured")
 		}
 		
-		currentElem := segment{crc: crc, timestamp: timestamp, tombstone: tombstone, keysize: keySize, valuesize: valueSize, key: key, value: value }
+		currentElem := Record{crc: crc, timestamp: timestamp, tombstone: tombstone, keysize: keySize, valuesize: valueSize, key: key, value: value }
 		dataElem = append(dataElem, currentElem)
 
 		start = start+29+int(keySize)+int(valueSize)
@@ -186,21 +173,50 @@ func fileLen(file *os.File) (int64, error) {
 	return info.Size(), nil
 }
 
-func dataToBinary(tombStone uint64, key string, value string) ([]byte) {
+func appendRecord(tombStone bool, key string, value []byte) {
+	//find active file
+	activeFile, err := getActiveFile()
+	if err != nil {
+		log.Fatal(err)
+	}
+	//convert data to binary
+	dataBinary := dataToBinary(tombStone, key, value)
+	completeActiveFile := "wal/" + activeFile
+
+	//append
+	f, err := os.OpenFile(completeActiveFile, os.O_RDWR | os.O_CREATE, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+
+	err = appendData(f, dataBinary)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func dataToBinary(tombStone bool, key string, value []byte) ([]byte) {
 	dataBinary := make([]byte, 29)
 
-	crc := CRC32([]byte(value))
+	crc := CRC32(value)
 	timestamp := time.Now().Unix()
 	binary.BigEndian.PutUint32(dataBinary[CRC_START:], crc)
 	binary.BigEndian.PutUint64(dataBinary[TIMESTAMP_START:], uint64(timestamp))
-	n := binary.PutUvarint(dataBinary[TOMBSTONE_START:], tombStone)
-	if n < 0 {
-		panic("error occured")
-	}
-	binary.BigEndian.PutUint64(dataBinary[KEY_SIZE_START:], uint64(len([]byte(key))))
-	binary.BigEndian.PutUint64(dataBinary[VALUE_SIZE_START:], uint64(len([]byte(value))))
 
-	dataToBeJoined := [][]byte{dataBinary, []byte(key), []byte(value)}
+	if tombStone {
+		n := binary.PutUvarint(dataBinary[TOMBSTONE_START:], 1)
+		if n < 0 {panic("error occured")}
+	} else {
+		n := binary.PutUvarint(dataBinary[TOMBSTONE_START:], 0)
+		if n < 0 {panic("error occured")}
+	}
+
+
+	binary.BigEndian.PutUint64(dataBinary[KEY_SIZE_START:], uint64(len([]byte(key))))
+	binary.BigEndian.PutUint64(dataBinary[VALUE_SIZE_START:], uint64(len(value)))
+
+	dataToBeJoined := [][]byte{dataBinary, []byte(key), value}
 	dataJoined := bytes.Join(dataToBeJoined, []byte(""))
 	
 	return dataJoined
@@ -219,7 +235,7 @@ func listAllFiles() ([]string, error) {
 	return allFiles, nil
 }
 
-func getNumberOfSegments(activeFile string) (int) {
+func getNumberOfRecords(activeFile string) (int) {
 	f, err := os.OpenFile(activeFile, os.O_RDWR, 0644)
 	if err != nil {log.Fatal(err)}
 
@@ -242,7 +258,7 @@ func getActiveFile() (string, error) {
 	} else {
 		activeFile := "wal/" + allFiles[len(allFiles)-1]
 
-		if getNumberOfSegments(activeFile) < 3 {
+		if getNumberOfRecords(activeFile) < 3 {
 			return allFiles[len(allFiles)-1], nil
 		}
 
