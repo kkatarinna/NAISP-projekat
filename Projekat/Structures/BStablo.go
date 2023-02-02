@@ -179,13 +179,14 @@ func (t BTree)Add(tree *BTree,key string,d []byte) bool{
 		n2 := temp[(len(node.datas)/2)+1:]
 
 		next1 := node.next[:(len(node.next)/2)]
-		next2 := node.next[(len(node.next)/2):]
 		if(len(next1) == len(n1)){
 			next1 = append(next1, nil)
 		}
+		next2 := node.next[(len(node.next)/2):]
 		node1 := Node{datas:n1,next:next1}
 		node2 := Node{datas:n2,next:next2}
-		parent.datas = append(parent.datas, middle)
+		newDatas := append(parent.datas,middle)
+		parent.datas = newDatas
 		sort.Slice(parent.datas,func(i,j int) bool{
 			return parent.datas[i].key < parent.datas[j].key
 		})
@@ -204,7 +205,8 @@ func (t BTree)Add(tree *BTree,key string,d []byte) bool{
 						tmp2 = tmp
 					}
 				}
-				parent.next = append(parent.next, tmp2)
+				newNodes := append(parent.next,tmp2)
+				parent.next = newNodes
 			}
 		}
 		//da li je roditelj pretrpan?
@@ -306,7 +308,6 @@ func (tree BTree) PrintBTreeWidth(){
 
 func (tree BTree) LogicDelete(key string) bool{
 	found,_,here,_ := tree.Find(key)
-	fmt.Print("PRONADJENO JE ", found)
 	if(found == false){
 		return false
 	}
@@ -325,12 +326,17 @@ func (tree BTree) LogicDelete(key string) bool{
 //	tree.Add(&tree,"A",[]byte{'n'})
 //	tree.Add(&tree,"B",[]byte{'n'})
 //	tree.Add(&tree,"C",[]byte{'n'})
-//	tree.Add(&tree,"D",[]byte{'n'})
-//	tree.Add(&tree,"E",[]byte{'n'})
-//	tree.Add(&tree,"F",[]byte{'n'})
-//	tree.Add(&tree,"G",[]byte{'n'})
-//	tree.Add(&tree,"H",[]byte{'n'})
 //	tree.Add(&tree,"I",[]byte{'n'})
+//	tree.Add(&tree,"E",[]byte{'n'})
+//	tree.Add(&tree,"H",[]byte{'n'})
+//	tree.Add(&tree,"N",[]byte{'n'})
+//	tree.Add(&tree,"F",[]byte{'n'})
 //	tree.Add(&tree,"J",[]byte{'n'})
+//	tree.Add(&tree,"M",[]byte{'n'})
+//	tree.Add(&tree,"L",[]byte{'n'})
+//	tree.Add(&tree,"K",[]byte{'n'})
+//	tree.Add(&tree,"D",[]byte{'n'})
+//	tree.Add(&tree,"O",[]byte{'n'})
+//	tree.Add(&tree,"G",[]byte{'n'})
 //	tree.PrintBTreeWidth()
 //}
