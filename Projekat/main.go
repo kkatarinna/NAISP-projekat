@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"time"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -40,38 +42,48 @@ func setConfig() *Config {
 func main() {
 	//config := setConfig()
 
-	// //append Record
-	// AppendRecordWal(config, false, "key3", []byte("value3"))
-	// AppendRecordWal(config, false, "key2", []byte("value3"))
-	// AppendRecordWal(config, true, "key3", []byte("value3"))
+	timestamp := time.Now().Unix()
+	tokenbucket := &TokenBucket{Time: timestamp, Tokens: config.TokensNumber}
 
-	// //read
-	// data, err := ReadAllWal()
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// fmt.Println(data)
+	mem := NewMem()
 
-	// for {
-	// 	fmt.Println("\n1. PUT")
-	// 	fmt.Println("2. GET")
-	// 	fmt.Println("3. DELETE")
-	// 	fmt.Println("x. exit")
-	// 	fmt.Printf("Izaberite jednu opciju >>")
-	// 	var input string
-	// 	fmt.Scanln(&input)
-	// 	if input == "1" {
-	// 		fmt.Println("PUT")
-	// 	} else if input == "2" {
-	// 		fmt.Println("GET")
-	// 	} else if input == "3" {
-	// 		fmt.Println("DELETE")
-	// 	} else if input == "x" {
-	// 		return
-	// 	} else {
-	// 		fmt.Println("Nije ispravan unos")
-	// 	}
-	// }
+	for {
+		fmt.Println("\n1. PUT")
+		fmt.Println("2. GET")
+		fmt.Println("3. DELETE")
+		fmt.Println("x. exit")
+		fmt.Printf("Izaberite jednu opciju >>")
+		var input string
+		fmt.Scanln(&input)
+		if !CheckTokenBucket(config, tokenbucket) {
+			fmt.Println("\nPrekoracen je broj zahteva u vremenskom intervalu.")
+			continue
+		}
+		if input == "1" {
+			successfulPut := Put(config, mem)
+			if successfulPut {
+				fmt.Println("\nPodatak je uspesno unet.")
+			} else {
+				fmt.Println("\nPodatak nije unet, doslo je do greske.")
+			}
+
+		} else if input == "2" {
+			fmt.Println("GET")
+
+		} else if input == "3" {
+			successfulDelete := Delete(config, mem)
+			if successfulDelete {
+				fmt.Println("\nPodatak je uspesno obrisan.")
+			} else {
+				fmt.Println("\nPodatak nije obrisan, doslo je do greske.")
+			}
+
+		} else if input == "x" {
+			return
+		} else {
+			fmt.Println("Nije ispravan unos")
+		}
+	}
 
 	// var bf = NewCms(0.1, 0.1)
 
