@@ -26,7 +26,7 @@ func NewCache(capacity int) *Cache { //konstruktor za cache
 func (c Cache) Set(key string, value []byte) {
     if elem, ok := c.items[key]; ok { //stavlja element ispred svih u ;isti ukoliko postoji vec element u njoj
         c.list.MoveToFront(&elem)
-        elem.Value = value
+        elem.Value.(*Entry).Value = value
         return
     }
     e := c.list.PushFront(&Entry{key, value}) //samo postavi novi element
