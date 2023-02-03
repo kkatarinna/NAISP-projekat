@@ -8,7 +8,7 @@ import (
 	. "projekat/Structures"
 	"time"
 
-	. "projekat/Structures/SSTable"
+	//. "projekat/Structures/SSTable"
 
 	// . "projekat/Structures/Types/CMS"
 
@@ -149,7 +149,7 @@ func main() {
 
 	// (SSTableFile).MergeInit(SSTableFile{})
 
-	Find_record_Files("1")
+	//Find_record_Files("1")
 
 	// hll := (HLL).Decode(HLL{}, &rez.Value)
 
