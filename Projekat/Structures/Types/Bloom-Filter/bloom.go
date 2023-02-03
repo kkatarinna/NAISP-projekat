@@ -10,14 +10,14 @@ import (
 type Bloom struct {
 	hash []HashWithSeed
 	arr  []byte
-	m    uint64
+	M    uint64
 	k    uint64
 }
 
 func NewBloom(elem uint64, rate float64) Bloom {
 	m := uint64(CalculateM(int(elem), rate))
 	k := uint64(CalculateK(int(elem), uint(m)))
-	fmt.Println(k)
+
 	arr := make([]byte, m)
 	hash := CreateHashFunctions(uint(k))
 
@@ -27,7 +27,7 @@ func NewBloom(elem uint64, rate float64) Bloom {
 
 	}
 
-	bf := Bloom{hash: hash, arr: arr, m: m, k: k}
+	bf := Bloom{hash: hash, arr: arr, M: m, k: k}
 
 	return bf
 }
@@ -37,7 +37,7 @@ func (bf Bloom) Add(data string) {
 	for _, fn := range bf.hash {
 
 		data := []byte(data)
-		bf.arr[(fn.Hash(data) % uint64(bf.m))] = 1
+		bf.arr[(fn.Hash(data) % uint64(bf.M))] = 1
 	}
 
 }
@@ -47,7 +47,7 @@ func (bf Bloom) Check(data string) bool {
 	for _, fn := range bf.hash {
 
 		data := []byte(data)
-		if bf.arr[(fn.Hash(data)%uint64(bf.m))] == 0 {
+		if bf.arr[(fn.Hash(data)%uint64(bf.M))] == 0 {
 			return false
 		}
 	}
@@ -57,7 +57,7 @@ func (bf Bloom) Check(data string) bool {
 func (bf *Bloom) Encode() []byte {
 
 	var buffer bytes.Buffer
-	binary.Write(&buffer, binary.LittleEndian, bf.m)
+	binary.Write(&buffer, binary.LittleEndian, bf.M)
 	binary.Write(&buffer, binary.LittleEndian, bf.k)
 	binary.Write(&buffer, binary.LittleEndian, bf.arr)
 
@@ -75,7 +75,7 @@ func (Bloom) Decode(fr *bufio.Reader) *Bloom {
 	bf := NewBloom(0, 0)
 	seed := make([]byte, 32)
 
-	err := binary.Read(fr, binary.LittleEndian, &bf.m)
+	err := binary.Read(fr, binary.LittleEndian, &bf.M)
 	if err != nil {
 		return nil
 	}
@@ -85,7 +85,7 @@ func (Bloom) Decode(fr *bufio.Reader) *Bloom {
 		return nil
 	}
 
-	arr := make([]byte, bf.m)
+	arr := make([]byte, bf.M)
 
 	err = binary.Read(fr, binary.LittleEndian, &arr)
 	if err != nil {
@@ -117,7 +117,7 @@ func (Bloom) Decode(fr *bufio.Reader) *Bloom {
 }
 
 func (bf *Bloom) Print() {
-	fmt.Println(bf.m)
+	fmt.Println(bf.M)
 	fmt.Println(bf.k)
 	fmt.Println(bf.arr)
 
@@ -135,5 +135,11 @@ func Get_bloom(fr *bufio.Reader) *Bloom {
 	bl := (Bloom).Decode(Bloom{}, fr)
 
 	return bl
+
+}
+
+func (bf *Bloom) GetElem(rate float64) uint {
+
+	return CalculateElem(uint(bf.M), rate)
 
 }

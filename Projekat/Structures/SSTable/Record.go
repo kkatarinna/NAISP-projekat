@@ -40,7 +40,7 @@ func NewRecord(key string, value []byte, Tombstone bool, Timestamp uint64) *Reco
 
 	Crc := CRC32(keyb.Bytes())
 
-	r := &Record{Crc: Crc, Timestamp: uint64(time.Now().Unix()), Tombstone: false, Keysize: uint64(keyb.Len()), Valuesize: uint64(len(value)), Key: key, Value: value}
+	r := &Record{Crc: Crc, Timestamp: uint64(time.Now().Unix()), Tombstone: Tombstone, Keysize: uint64(keyb.Len()), Valuesize: uint64(len(value)), Key: key, Value: value}
 
 	return r
 }

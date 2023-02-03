@@ -366,6 +366,25 @@ func Find_record_Folders(key string) *Record {
 
 func (SSTable) MergeInit() {
 
+	first := -1
+
+	for i := MAX_LVL; i > 0; i-- {
+
+		os.MkdirAll(MAIN_DIR_FOLDERS+"/LVL"+strconv.Itoa(i), os.ModePerm)
+		files, err := ioutil.ReadDir(MAIN_DIR_FOLDERS + "/LVL" + strconv.Itoa(i))
+
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		if len(files) != 0 {
+
+			first = i
+			break
+		}
+
+	}
+
 	for i := 1; i <= MAX_LVL; i++ {
 
 		os.MkdirAll(MAIN_DIR_FOLDERS+"/LVL"+strconv.Itoa(i), os.ModePerm)
@@ -381,12 +400,12 @@ func (SSTable) MergeInit() {
 			slice := files[:len(files)-len(files)%lvlMap[i]]
 			files_next, err2 := ioutil.ReadDir(MAIN_DIR_FOLDERS + "/LVL" + strconv.Itoa(i+1))
 			if err2 != nil {
-				fmt.Print(err)
+				(SSTable).Merge(SSTable{}, &slice, i, len(files)+1, i, false)
 			}
 
 			if (lvlMap[i+1] - (len(files_next) + len(slice)/2)) < 0 {
 
-				index = (lvlMap[i+1] - (len(files_next) + len(slice)/2)) + 1
+				index = (lvlMap[i+1] - (len(files_next) + len(slice)/2))
 			} else {
 				index = len(files_next) + 1
 			}
@@ -398,7 +417,22 @@ func (SSTable) MergeInit() {
 				next_lvl = i + 1
 			}
 
-			(SSTable).Merge(SSTable{}, &slice, next_lvl, index)
+			var del bool
+
+			if first == -1 {
+				del = true
+				first = i
+			} else {
+				if next_lvl > first {
+					del = true
+					first++
+				} else {
+					del = false
+				}
+
+			}
+
+			(SSTable).Merge(SSTable{}, &slice, next_lvl, index, i, del)
 
 		}
 
@@ -406,11 +440,10 @@ func (SSTable) MergeInit() {
 
 }
 
-func (SSTable) Merge(files *[]fs.FileInfo, next_dir int, index int) {
+func (SSTable) Merge(files *[]fs.FileInfo, next_dir int, index int, this_dir int, del bool) {
 
 	for i := 0; i < len(*files); i += 2 {
 
-		bloom := NewBloom(100, 0.1)
 		merkle_r := CreateMerkleRoot()
 		merkle_b := make([][]byte, 0)
 		for i := range merkle_b {
@@ -422,6 +455,7 @@ func (SSTable) Merge(files *[]fs.FileInfo, next_dir int, index int) {
 		index_list := make([]*Index, 0)
 
 		sst := GetSSTableParam(next_dir, index)
+		index++
 
 		file3, err := os.Create(sst.dataFile.Filename)
 		if err != nil {
@@ -431,8 +465,10 @@ func (SSTable) Merge(files *[]fs.FileInfo, next_dir int, index int) {
 		fw := bufio.NewWriter(file3)
 
 		strArr := []rune((*files)[i].Name())
-		path1 := (MAIN_DIR_FOLDERS + "/LVL" + strconv.Itoa(next_dir-1) + "/" + (*files)[i].Name() + "/" + strconv.Itoa(next_dir-1) + "usertable-" + string(strArr[4:]) + "-Data.db")
-		file1, err := os.Open(path1)
+		gen, _ := strconv.Atoi(string(strArr[4:]))
+		ss1 := GetSSTableParam(this_dir, gen)
+
+		file1, err := os.Open(ss1.dataFile.Filename)
 		if err != nil {
 			fmt.Println("NEMA")
 		}
@@ -440,14 +476,20 @@ func (SSTable) Merge(files *[]fs.FileInfo, next_dir int, index int) {
 		fr1 := bufio.NewReader(file1)
 
 		strArr = []rune((*files)[i+1].Name())
-		path2 := (MAIN_DIR_FOLDERS + "/LVL" + strconv.Itoa(next_dir-1) + "/" + (*files)[i+1].Name() + "/" + strconv.Itoa(next_dir-1) + "usertable-" + string(strArr[4:]) + "-Data.db")
-		file2, err := os.Open(path2)
+		gen, _ = strconv.Atoi(string(strArr[4:]))
+		ss2 := GetSSTableParam(this_dir, gen)
+		file2, err := os.Open(ss2.dataFile.Filename)
 		if err != nil {
 			fmt.Println("NEMA")
 		}
 		defer file2.Close()
 
 		fr2 := bufio.NewReader(file2)
+
+		bf1 := ss1.filterFile.read_bloom().GetElem(0.1)
+		bf2 := ss2.filterFile.read_bloom().GetElem(0.1)
+
+		bloom := NewBloom(uint64(bf1+bf2), 0.1)
 
 		r1 := Decode(fr1)
 
@@ -463,17 +505,23 @@ func (SSTable) Merge(files *[]fs.FileInfo, next_dir int, index int) {
 						break
 					}
 					r_upis := r2
-					bloom.Add(r_upis.Key)
-					merkle_b = append(merkle_b, r_upis.Value)
 
 					size := fw.Available()
 					sst.dataFile.write_record(r_upis, fw)
 					size_after := fw.Available()
 
-					index := newIndex(r_upis.Keysize, r_upis.Key, offset)
-					index_list = append(index_list, index)
+					if r_upis.Tombstone && (del || next_dir == this_dir) {
+						fw = bufio.NewWriter(file3)
+					} else {
 
-					offset = uint64(size-size_after) + offset
+						bloom.Add(r_upis.Key)
+						merkle_b = append(merkle_b, r_upis.Value)
+						index := newIndex(r_upis.Keysize, r_upis.Key, offset)
+						index_list = append(index_list, index)
+
+						offset = uint64(size-size_after) + offset
+
+					}
 
 					fw.Flush()
 
@@ -492,18 +540,25 @@ func (SSTable) Merge(files *[]fs.FileInfo, next_dir int, index int) {
 					if r1 == nil {
 						break
 					}
+
 					r_upis := r1
-					bloom.Add(r_upis.Key)
-					merkle_b = append(merkle_b, r_upis.Value)
 
 					size := fw.Available()
 					sst.dataFile.write_record(r_upis, fw)
 					size_after := fw.Available()
 
-					index := newIndex(r_upis.Keysize, r_upis.Key, offset)
-					index_list = append(index_list, index)
+					if r_upis.Tombstone && (del || next_dir == this_dir) {
+						fw = bufio.NewWriter(file3)
+					} else {
 
-					offset = uint64(size-size_after) + offset
+						bloom.Add(r_upis.Key)
+						merkle_b = append(merkle_b, r_upis.Value)
+						index := newIndex(r_upis.Keysize, r_upis.Key, offset)
+						index_list = append(index_list, index)
+
+						offset = uint64(size-size_after) + offset
+
+					}
 
 					fw.Flush()
 
@@ -518,19 +573,22 @@ func (SSTable) Merge(files *[]fs.FileInfo, next_dir int, index int) {
 			if r1.Key < r2.Key {
 
 				r_upis := r1
-
-				bloom.Add(r_upis.Key)
-				merkle_b = append(merkle_b, r_upis.Value)
-
 				size := fw.Available()
 				sst.dataFile.write_record(r_upis, fw)
 				size_after := fw.Available()
 
-				index := newIndex(r_upis.Keysize, r_upis.Key, offset)
-				index_list = append(index_list, index)
+				if r_upis.Tombstone && (del || next_dir == this_dir) {
+					fw = bufio.NewWriter(file3)
+				} else {
 
-				offset = uint64(size-size_after) + offset
+					bloom.Add(r_upis.Key)
+					merkle_b = append(merkle_b, r_upis.Value)
+					index := newIndex(r_upis.Keysize, r_upis.Key, offset)
+					index_list = append(index_list, index)
 
+					offset = uint64(size-size_after) + offset
+
+				}
 				fw.Flush()
 
 				r1 = Decode(fr1)
@@ -543,18 +601,22 @@ func (SSTable) Merge(files *[]fs.FileInfo, next_dir int, index int) {
 					r_upis = r2
 
 				}
-
-				bloom.Add(r_upis.Key)
-				merkle_b = append(merkle_b, r_upis.Value)
-
 				size := fw.Available()
 				sst.dataFile.write_record(r_upis, fw)
 				size_after := fw.Available()
 
-				index := newIndex(r_upis.Keysize, r_upis.Key, offset)
-				index_list = append(index_list, index)
+				if r_upis.Tombstone && (del || next_dir == this_dir) {
+					fw = bufio.NewWriter(file3)
+				} else {
 
-				offset = uint64(size-size_after) + offset
+					bloom.Add(r_upis.Key)
+					merkle_b = append(merkle_b, r_upis.Value)
+					index := newIndex(r_upis.Keysize, r_upis.Key, offset)
+					index_list = append(index_list, index)
+
+					offset = uint64(size-size_after) + offset
+
+				}
 
 				fw.Flush()
 
@@ -565,17 +627,22 @@ func (SSTable) Merge(files *[]fs.FileInfo, next_dir int, index int) {
 
 				r_upis := r2
 
-				bloom.Add(r_upis.Key)
-				merkle_b = append(merkle_b, r_upis.Value)
-
 				size := fw.Available()
 				sst.dataFile.write_record(r_upis, fw)
 				size_after := fw.Available()
 
-				index := newIndex(r_upis.Keysize, r_upis.Key, offset)
-				index_list = append(index_list, index)
+				if r_upis.Tombstone && next_dir == this_dir {
+					fw = bufio.NewWriter(file3)
+				} else {
 
-				offset = uint64(size-size_after) + offset
+					bloom.Add(r_upis.Key)
+					merkle_b = append(merkle_b, r_upis.Value)
+					index := newIndex(r_upis.Keysize, r_upis.Key, offset)
+					index_list = append(index_list, index)
+
+					offset = uint64(size-size_after) + offset
+
+				}
 
 				fw.Flush()
 

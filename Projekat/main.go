@@ -8,6 +8,8 @@ import (
 
 	. "projekat/Structures/SSTable"
 
+	// . "projekat/Structures/Types/Bloom-Filter"
+
 	// . "projekat/Structures/Types/CMS"
 
 	"gopkg.in/yaml.v2"
@@ -120,9 +122,9 @@ func main() {
 
 	// d.emptyCount()
 
-	// r := NewRecord("1", []byte("1111"), true, 0)
+	// r := NewRecord("1", []byte("1111"), false, 0)
 	// r2 := NewRecord("10", []byte("lala"), true, 0)
-	// r3 := NewRecord("12", []byte("lala"), true, 0)
+	// r3 := NewRecord("12", []byte("lala"), false, 0)
 
 	// list := make([]*Record, 0)
 
