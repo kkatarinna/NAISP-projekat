@@ -29,7 +29,7 @@ type SSTable struct {
 	indexFile  *BinaryFile
 	sumFile    *BinaryFile
 	filterFile *BinaryFile
-	metaFile   *BinaryFile
+	metaPath   string
 	TOCPath    string
 }
 
@@ -59,9 +59,9 @@ func NewSSTable() *SSTable {
 
 	sst.filterFile = newBinaryFile(str + "Filter.db")
 
-	sst.metaFile = newBinaryFile(str + "Meta.db")
-
 	sst.sumFile = newBinaryFile(str + "Summary.db")
+
+	sst.metaPath = str + "Meta.txt"
 
 	sst.TOCPath = str + "TOC.txt"
 
@@ -69,7 +69,7 @@ func NewSSTable() *SSTable {
 
 }
 
-func NewSSTableParam(lvl int, gen int) *SSTable {
+func GetSSTableParam(lvl int, gen int) *SSTable {
 
 	dir := MAIN_DIR_FOLDERS + "/LVL" + strconv.Itoa(lvl) + "/GEN-" + strconv.Itoa(gen)
 
@@ -87,9 +87,9 @@ func NewSSTableParam(lvl int, gen int) *SSTable {
 
 	sst.filterFile = newBinaryFile(str + "Filter.db")
 
-	sst.metaFile = newBinaryFile(str + "Meta.db")
-
 	sst.sumFile = newBinaryFile(str + "Summary.db")
+
+	sst.metaPath = str + "Meta.txt"
 
 	sst.TOCPath = str + "TOC.txt"
 
@@ -97,41 +97,41 @@ func NewSSTableParam(lvl int, gen int) *SSTable {
 
 }
 
-func getSSTable(index int) *SSTable {
+// func getSSTable(index int) *SSTable {
 
-	files, _ := ioutil.ReadDir(MAIN_DIR_FOLDERS)
-	// fmt.Println(len(files))
-	i := len(files)
+// 	files, _ := ioutil.ReadDir(MAIN_DIR_FOLDERS)
+// 	// fmt.Println(len(files))
+// 	i := len(files)
 
-	if index < 0 || index > i {
-		return nil
-	}
+// 	if index < 0 || index > i {
+// 		return nil
+// 	}
 
-	dir := MAIN_DIR_FOLDERS + "/GEN-" + strconv.Itoa(index)
+// 	dir := MAIN_DIR_FOLDERS + "/GEN-" + strconv.Itoa(index)
 
-	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
-		log.Fatal(err)
-	}
+// 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+// 		log.Fatal(err)
+// 	}
 
-	sst := &SSTable{}
+// 	sst := &SSTable{}
 
-	str := dir + "/usertable-" + strconv.Itoa(index) + "-"
+// 	str := dir + "/usertable-" + strconv.Itoa(index) + "-"
 
-	sst.dataFile = newBinaryFile(str + "Data.db")
+// 	sst.dataFile = newBinaryFile(str + "Data.db")
 
-	sst.indexFile = newBinaryFile(str + "Index.db")
+// 	sst.indexFile = newBinaryFile(str + "Index.db")
 
-	sst.filterFile = newBinaryFile(str + "Filter.db")
+// 	sst.filterFile = newBinaryFile(str + "Filter.db")
 
-	sst.metaFile = newBinaryFile(str + "Meta.db")
+// 	sst.sumFile = newBinaryFile(str + "Summary.db")
 
-	sst.sumFile = newBinaryFile(str + "Summary.db")
+// 	sst.metaPath = str + "Meta.db"
 
-	sst.TOCPath = str + "TOC.txt"
+// 	sst.TOCPath = str + "TOC.txt"
 
-	return sst
+// 	return sst
 
-}
+// }
 
 func Rename() {
 
@@ -147,7 +147,7 @@ func Rename() {
 		os.Rename(replace+"/1usertable-"+gen+"-Data.db", replace+"/1usertable-"+strconv.Itoa(i+1)+"-Data.db")
 		os.Rename(replace+"/1usertable-"+gen+"-Index.db", replace+"/1usertable-"+strconv.Itoa(i+1)+"-Index.db")
 		os.Rename(replace+"/1usertable-"+gen+"-Filter.db", replace+"/1usertable-"+strconv.Itoa(i+1)+"-Filter.db")
-		os.Rename(replace+"/1usertable-"+gen+"-Meta.db", replace+"/1usertable-"+strconv.Itoa(i+1)+"-Meta.db")
+		os.Rename(replace+"/1usertable-"+gen+"-Meta.txt", replace+"/1usertable-"+strconv.Itoa(i+1)+"-Meta.txt")
 		os.Rename(replace+"/1usertable-"+gen+"-Summary.db", replace+"/1usertable-"+strconv.Itoa(i+1)+"-Summary.db")
 		os.Rename(replace+"/1usertable-"+gen+"-TOC.txt", replace+"/1usertable-"+strconv.Itoa(i+1)+"-TOC.txt")
 
@@ -158,6 +158,11 @@ func Rename() {
 func (sst *SSTable) Write_table(list *[]*Record) {
 
 	bloom := NewBloom(uint64(len(*list)), 0.1)
+	merkle_r := CreateMerkleRoot()
+	merkle_b := make([][]byte, 0)
+	for i := range merkle_b {
+		merkle_b[i] = make([]byte, 0)
+	}
 
 	file, err := os.Create(sst.dataFile.Filename)
 	if err != nil {
@@ -174,6 +179,7 @@ func (sst *SSTable) Write_table(list *[]*Record) {
 	for _, element := range *list {
 
 		bloom.Add(element.Key)
+		merkle_b = append(merkle_b, element.Value)
 
 		size := fw.Available()
 		sst.dataFile.write_record(element, fw)
@@ -190,6 +196,8 @@ func (sst *SSTable) Write_table(list *[]*Record) {
 
 	sst.write_bloom(&bloom)
 	sst.write_index(&index_list)
+
+	merkle_r.FormMerkleTree(sst.metaPath, merkle_b, true)
 
 }
 
@@ -312,49 +320,47 @@ func (sst *SSTable) write_bloom(bloom *Bloom) {
 
 func Find_record_Folders(key string) *Record {
 
-	files, _ := ioutil.ReadDir(MAIN_DIR_FOLDERS)
-	// fmt.Println(len(files))
-	i := len(files)
+	for lvl := 1; lvl <= MAX_LVL; lvl++ {
 
-	if i == 0 {
-		return nil
+		files, _ := ioutil.ReadDir(MAIN_DIR_FOLDERS + "/LVL" + strconv.Itoa(lvl))
+		// fmt.Println(len(files))
+		i := len(files)
+
+		for ; i > 0; i-- {
+
+			ss := GetSSTableParam(lvl, i)
+
+			bloom := ss.filterFile.read_bloom()
+
+			if !bloom.Check(key) {
+				continue
+			}
+
+			offset_ind := findOffSum(key, ss.sumFile, 0)
+
+			if offset_ind == nil {
+				continue
+			}
+
+			rec_ind := findOffInd(key, ss.indexFile, uint64(offset_ind.offset))
+
+			if rec_ind == nil {
+				continue
+			}
+
+			file, _ := os.Open(ss.dataFile.Filename)
+			file.Seek(int64(rec_ind.offset), 0)
+
+			fr := bufio.NewReader(file)
+
+			record := Decode(fr)
+
+			fmt.Println(record)
+
+			return record
+
+		}
 	}
-
-	for ; i > 0; i-- {
-
-		ss := getSSTable(i)
-
-		bloom := ss.filterFile.read_bloom()
-
-		if !bloom.Check(key) {
-			continue
-		}
-
-		offset_ind := findOffSum(key, ss.sumFile, 0)
-
-		if offset_ind == nil {
-			continue
-		}
-
-		rec_ind := findOffInd(key, ss.indexFile, uint64(offset_ind.offset))
-
-		if rec_ind == nil {
-			continue
-		}
-
-		file, _ := os.Open(ss.dataFile.Filename)
-		file.Seek(int64(rec_ind.offset), 0)
-
-		fr := bufio.NewReader(file)
-
-		record := Decode(fr)
-
-		fmt.Println(record)
-
-		return record
-
-	}
-
 	return nil
 }
 
@@ -405,12 +411,17 @@ func (SSTable) Merge(files *[]fs.FileInfo, next_dir int, index int) {
 	for i := 0; i < len(*files); i += 2 {
 
 		bloom := NewBloom(100, 0.1)
+		merkle_r := CreateMerkleRoot()
+		merkle_b := make([][]byte, 0)
+		for i := range merkle_b {
+			merkle_b[i] = make([]byte, 0)
+		}
 
 		offset := uint64(0)
 
 		index_list := make([]*Index, 0)
 
-		sst := NewSSTableParam(next_dir, index)
+		sst := GetSSTableParam(next_dir, index)
 
 		file3, err := os.Create(sst.dataFile.Filename)
 		if err != nil {
@@ -452,6 +463,9 @@ func (SSTable) Merge(files *[]fs.FileInfo, next_dir int, index int) {
 						break
 					}
 					r_upis := r2
+					bloom.Add(r_upis.Key)
+					merkle_b = append(merkle_b, r_upis.Value)
+
 					size := fw.Available()
 					sst.dataFile.write_record(r_upis, fw)
 					size_after := fw.Available()
@@ -479,6 +493,9 @@ func (SSTable) Merge(files *[]fs.FileInfo, next_dir int, index int) {
 						break
 					}
 					r_upis := r1
+					bloom.Add(r_upis.Key)
+					merkle_b = append(merkle_b, r_upis.Value)
+
 					size := fw.Available()
 					sst.dataFile.write_record(r_upis, fw)
 					size_after := fw.Available()
@@ -503,6 +520,7 @@ func (SSTable) Merge(files *[]fs.FileInfo, next_dir int, index int) {
 				r_upis := r1
 
 				bloom.Add(r_upis.Key)
+				merkle_b = append(merkle_b, r_upis.Value)
 
 				size := fw.Available()
 				sst.dataFile.write_record(r_upis, fw)
@@ -515,7 +533,7 @@ func (SSTable) Merge(files *[]fs.FileInfo, next_dir int, index int) {
 
 				fw.Flush()
 
-				r2 = Decode(fr1)
+				r1 = Decode(fr1)
 
 			} else if r1.Key == r2.Key {
 
@@ -527,6 +545,7 @@ func (SSTable) Merge(files *[]fs.FileInfo, next_dir int, index int) {
 				}
 
 				bloom.Add(r_upis.Key)
+				merkle_b = append(merkle_b, r_upis.Value)
 
 				size := fw.Available()
 				sst.dataFile.write_record(r_upis, fw)
@@ -547,6 +566,7 @@ func (SSTable) Merge(files *[]fs.FileInfo, next_dir int, index int) {
 				r_upis := r2
 
 				bloom.Add(r_upis.Key)
+				merkle_b = append(merkle_b, r_upis.Value)
 
 				size := fw.Available()
 				sst.dataFile.write_record(r_upis, fw)
@@ -568,6 +588,7 @@ func (SSTable) Merge(files *[]fs.FileInfo, next_dir int, index int) {
 		os.RemoveAll(MAIN_DIR_FOLDERS + "/LVL" + strconv.Itoa(next_dir-1) + "/" + (*files)[i+1].Name() + "/")
 		sst.write_bloom(&bloom)
 		sst.write_index(&index_list)
+		merkle_r.FormMerkleTree(sst.metaPath, merkle_b, true)
 
 	}
 

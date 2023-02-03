@@ -1,4 +1,4 @@
-package structures
+package sstable
 
 import (
 	"crypto/sha1"
@@ -47,7 +47,7 @@ func CreateMerkleRoot() MerkleRoot {
 // korisno logicko brisanje onda kad je potreban update samo se formira novo
 // sa sredjenim podacima
 // VRACA DRVO STAVITE MR = MR.FormMerkleTree...
-func (mr MerkleRoot) FormMerkleTree(data [][]byte, serialize bool) MerkleRoot {
+func (mr MerkleRoot) FormMerkleTree(filepath string, data [][]byte, serialize bool) MerkleRoot {
 	nodes := make([]NodeMerkle, 0)
 	for _, element := range data {
 		d := Hash(element)
@@ -55,7 +55,7 @@ func (mr MerkleRoot) FormMerkleTree(data [][]byte, serialize bool) MerkleRoot {
 		nodes = append(nodes, leaf)
 	}
 	if serialize {
-		Serialize(data)
+		Serialize(filepath, data)
 	}
 	i := 0
 	h1 := nodes
@@ -88,14 +88,14 @@ func (mr MerkleRoot) FormMerkleTree(data [][]byte, serialize bool) MerkleRoot {
 }
 
 // hesira podatke data pravi serijalizabilne cvorove i stavlja u Merkle.bin
-func Serialize(data [][]byte) {
+func Serialize(filepath string, data [][]byte) {
 	data2 := []NodeSerialize{}
 	for _, d := range data {
 		value := Hash(d)
 		n := NodeSerialize{Data: value}
 		data2 = append(data2, n)
 	}
-	file, err := os.OpenFile("Merkle.bin", os.O_WRONLY|os.O_CREATE, 0666)
+	file, err := os.OpenFile(filepath, os.O_WRONLY|os.O_CREATE, 0666)
 	if err != nil {
 		panic(err)
 	}
@@ -104,9 +104,9 @@ func Serialize(data [][]byte) {
 }
 
 // ucitava samo lisce koristi za ucitavanje stabla
-func LoadLeafs() [][]byte {
+func LoadLeafs(filepath string) [][]byte {
 	data2 := []NodeSerialize{}
-	file, err := os.OpenFile("Merkle.bin", os.O_RDONLY, 0666)
+	file, err := os.OpenFile(filepath, os.O_RDONLY, 0666)
 	if err != nil {
 		panic(err)
 	}
@@ -128,10 +128,10 @@ func LoadLeafs() [][]byte {
 }
 
 // ucitava merkle stablo i vraca MerkleRoot iz fajla Merkle.bin
-func LoadMerkle() MerkleRoot {
-	data := LoadLeafs()
+func LoadMerkle(filepath string) MerkleRoot {
+	data := LoadLeafs(filepath)
 	mr := CreateMerkleRoot()
-	mr = mr.FormMerkleTree(data, false)
+	mr = mr.FormMerkleTree(filepath, data, false)
 	return mr
 }
 

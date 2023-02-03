@@ -6,7 +6,7 @@ import (
 	"math/rand"
 	. "projekat/Structures"
 
-	// . "projekat/Structures/SSTable"
+	. "projekat/Structures/SSTable"
 
 	// . "projekat/Structures/Types/CMS"
 
@@ -120,9 +120,9 @@ func main() {
 
 	// d.emptyCount()
 
-	// r := NewRecord("1", d.Encode(), true, 0)
-	// r2 := NewRecord("2", []byte("lala"), true, 0)
-	// r3 := NewRecord("5", []byte("lala"), true, 0)
+	// r := NewRecord("1", []byte("1111"), true, 0)
+	// r2 := NewRecord("10", []byte("lala"), true, 0)
+	// r3 := NewRecord("12", []byte("lala"), true, 0)
 
 	// list := make([]*Record, 0)
 
@@ -130,11 +130,13 @@ func main() {
 	// list = append(list, r2)
 	// list = append(list, r3)
 
-	// sst := NewSSTable()
+	// sst := NewSSTableFile()
 
 	// sst.Write_table(&list)
 
-	// rez := Find_record_Folders("1")
+	// (SSTableFile).MergeInit(SSTableFile{})
+
+	Find_record_Files("1")
 
 	// hll := (HLL).Decode(HLL{}, &rez.Value)
 
