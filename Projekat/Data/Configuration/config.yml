@@ -1,4 +1,0 @@
-wal_size: 10
-memtable_size: 10
-trashold: 50
-memtable_structure: btree

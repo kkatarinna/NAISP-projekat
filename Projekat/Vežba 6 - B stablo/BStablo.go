@@ -1,4 +1,4 @@
-package structures
+package main
 
 import (
 	"fmt"
@@ -185,7 +185,11 @@ func (t BTree)Add(tree *BTree,key string,d []byte) bool{
 		next2 := node.next[(len(node.next)/2):]
 		node1 := Node{datas:n1,next:next1}
 		node2 := Node{datas:n2,next:next2}
-		newDatas := append(parent.datas,middle)
+		newDatas := make([]Data,len(parent.datas))
+		for k := range parent.datas{
+			newDatas[k] = parent.datas[k]
+		}
+		newDatas = append(newDatas, middle)
 		parent.datas = newDatas
 		sort.Slice(parent.datas,func(i,j int) bool{
 			return parent.datas[i].key < parent.datas[j].key
@@ -205,7 +209,11 @@ func (t BTree)Add(tree *BTree,key string,d []byte) bool{
 						tmp2 = tmp
 					}
 				}
-				newNodes := append(parent.next,tmp2)
+				newNodes := make([]*Node,len(parent.next))
+				for k := range parent.next{
+					newNodes[k] = parent.next[k]
+				}
+				newNodes = append(newNodes, tmp2)
 				parent.next = newNodes
 			}
 		}
@@ -321,22 +329,18 @@ func (tree BTree) LogicDelete(key string) bool{
 	return false
 }
 
-//func main(){
-//	tree := CreateBTree(3)
-//	tree.Add(&tree,"A",[]byte{'n'})
-//	tree.Add(&tree,"B",[]byte{'n'})
-//	tree.Add(&tree,"C",[]byte{'n'})
-//	tree.Add(&tree,"I",[]byte{'n'})
-//	tree.Add(&tree,"E",[]byte{'n'})
-//	tree.Add(&tree,"H",[]byte{'n'})
-//	tree.Add(&tree,"N",[]byte{'n'})
-//	tree.Add(&tree,"F",[]byte{'n'})
-//	tree.Add(&tree,"J",[]byte{'n'})
-//	tree.Add(&tree,"M",[]byte{'n'})
-//	tree.Add(&tree,"L",[]byte{'n'})
-//	tree.Add(&tree,"K",[]byte{'n'})
-//	tree.Add(&tree,"D",[]byte{'n'})
-//	tree.Add(&tree,"O",[]byte{'n'})
-//	tree.Add(&tree,"G",[]byte{'n'})
-//	tree.PrintBTreeWidth()
-//}
+func main(){
+	tree := CreateBTree(3)
+	tree.Add(&tree,"1",[]byte{'n'})
+	tree.Add(&tree,"2",[]byte{'n'})
+	tree.Add(&tree,"11",[]byte{'n'})
+	tree.Add(&tree,"4",[]byte{'n'})
+	tree.Add(&tree,"5",[]byte{'n'})
+	tree.Add(&tree,"7",[]byte{'n'})
+	tree.Add(&tree,"10",[]byte{'n'})
+	tree.Add(&tree,"9",[]byte{'n'})
+	tree.Add(&tree,"3",[]byte{'n'})
+	tree.Add(&tree,"6",[]byte{'n'})
+	tree.Add(&tree,"8",[]byte{'n'})
+	tree.PrintBTreeWidth()
+}
