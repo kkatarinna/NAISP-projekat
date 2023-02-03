@@ -5,10 +5,11 @@ import (
 	"io/ioutil"
 	"log"
 	"math/rand"
+	"os"
 	. "projekat/Structures"
 	"time"
 
-	//. "projekat/Structures/SSTable"
+	. "projekat/Structures/SSTable"
 
 	// . "projekat/Structures/Types/Bloom-Filter"
 
@@ -42,6 +43,8 @@ func setConfig() *Config {
 }
 
 func main() {
+	os.MkdirAll(MAIN_DIR_FILES+"/LVL1", os.ModePerm)
+	os.MkdirAll(MAIN_DIR_FOLDERS+"/LVL1", os.ModePerm)
 	config := setConfig()
 
 	timestamp := time.Now().Unix()
