@@ -26,6 +26,8 @@ type SSTableFile struct {
 
 func NewSSTableFile() *SSTableFile {
 
+	os.MkdirAll(MAIN_DIR_FILES+"/LVL1", os.ModePerm)
+
 	files, err := ioutil.ReadDir(MAIN_DIR_FILES + "/LVL1")
 
 	if err != nil {
