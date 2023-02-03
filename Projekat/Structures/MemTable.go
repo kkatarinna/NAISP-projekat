@@ -1,8 +1,8 @@
 package structures
 
 import (
-	"log"
 	"fmt"
+	"log"
 	. "projekat/Structures/SSTable"
 	"time"
 )
@@ -18,6 +18,7 @@ type Config struct {
 }
 
 type Memtable struct {
+	BTree		 *BTree
 	Skiplist     *SkipList
 	trashold     uint64
 	size         uint64
@@ -30,7 +31,13 @@ func NewMemPar(c *Config) *Memtable {
 	if err != nil {
 		log.Fatal(err)
 	}
-	mem := &Memtable{Skiplist: CreateSkipList(), memtableSize: c.MemtableSize, walSize: c.WalSize, trashold: c.Trashold, size: 0}
+	//sta ce se desiti ako nije btree da li ce overwrite BTree mem
+	mem := &Memtable{Skiplist:nil,BTree:CreateBTree(3), memtableSize: c.MemtableSize, walSize: c.WalSize, trashold: c.Trashold, size: 0}
+	
+	if(c.MemtableStructure != "btree"){
+		mem = &Memtable{Skiplist: CreateSkipList(),BTree:nil, memtableSize: c.MemtableSize, walSize: c.WalSize, trashold: c.Trashold, size: 0}
+	}
+
 	if empty {
 		return mem
 	}
@@ -49,7 +56,9 @@ func NewMem() *Memtable {
 	if err != nil {
 		log.Fatal(err)
 	}
-	mem := &Memtable{Skiplist: CreateSkipList(), memtableSize: 10, walSize: 10, trashold: 30, size: 0}
+
+	mem := &Memtable{BTree:nil,Skiplist: CreateSkipList(), memtableSize: 10, walSize: 10, trashold: 30, size: 0}
+	
 	if empty {
 		return mem
 	}
@@ -65,7 +74,12 @@ func NewMem() *Memtable {
 
 func (mem *Memtable) ReconstructWal(data []Record) {
 	for _, rec := range data {
-		success := mem.Skiplist.AddRecord(rec)
+		success := false
+		if(mem.Skiplist == nil){
+			success = mem.BTree.AddRecord(mem.BTree,rec)
+		}else{
+			success = mem.Skiplist.AddRecord(rec)
+		}
 		if !success {
 			panic("error occured")
 		} 
@@ -74,87 +88,190 @@ func (mem *Memtable) ReconstructWal(data []Record) {
 
 func (mem *Memtable) Insert(key string, value []byte) bool {
 
-	node := mem.Skiplist.find(key)
+	//ako se koristi bTree
+	if(mem.Skiplist == nil){
+		_,_,node2,_ := mem.BTree.Find(key)
+		var data *Data
+		for  _,n := range node2.datas{
+			if (n.key == key){
+				data = &n
+			}
+		}
 
-	if node != nil {
+		if data != nil {
+	
+			data.tombstone = false
+			data.value = value
+			data.timestamp = uint64(time.Now().Unix())
+			data.tombstone = false
+	
+		} else {
+			mem.BTree.Add(mem.BTree,key, value)
+			mem.size++
+		}
+	
+		if float64(mem.size) >= float64((mem.memtableSize*mem.trashold)/100.0) {
+			mem.Flush()
+		}
 
-		node.tombstone = false
-		node.value = value
-		node.timestamp = uint64(time.Now().Unix())
-		node.tombstone = false
+		return true
 
-	} else {
-		mem.Skiplist.Add(key, value)
-		mem.size++
+	//ako se koristi BTree
+	}else if(mem.BTree == nil){
+		node := mem.Skiplist.find(key)
+
+		if node != nil {
+	
+			node.tombstone = false
+			node.value = value
+			node.timestamp = uint64(time.Now().Unix())
+			node.tombstone = false
+	
+		} else {
+			mem.Skiplist.Add(key, value)
+			mem.size++
+		}
+	
+		if float64(mem.size) >= float64((mem.memtableSize*mem.trashold)/100.0) {
+			mem.Flush()
+		}
+
+		return true
 	}
 
-	if float64(mem.size) >= float64((mem.memtableSize*mem.trashold)/100.0) {
-		mem.Flush()
-	}
 
-	return true
+	return false
 }
 
 func (mem *Memtable) Find(key string) []byte {
+	
+	//ako se koristi skip list
+	if(mem.BTree == nil){
+		node := mem.Skiplist.find(key)
+		var rec *Record
 
-	node := mem.Skiplist.find(key)
-	var rec *Record
+		if node != nil {
 
-	if node != nil {
+			return node.value
 
-		return node.value
+		} else {
+			rec = Find_record_Files(key)
+		}
 
-	} else {
-		rec = Find_record_Files(key)
+		if rec != nil {
+
+			return rec.Value
+
+		} else {
+			fmt.Println("Nema")
+			return nil
+		}
+	//ako se koristi BTree
+	}else if(mem.Skiplist == nil){
+		found,value,_,_ := mem.BTree.Find(key)
+		var rec *Record
+
+		if found {
+
+			return value
+
+		} else {
+			rec = Find_record_Files(key)
+		}
+
+		if rec != nil {
+
+			return rec.Value
+
+		} else {
+			fmt.Println("Nema")
+			return nil
+		}
+
 	}
-
-	if rec != nil {
-
-		return rec.Value
-
-	} else {
-		fmt.Println("Nema")
-		return nil
-	}
+	return nil
 
 }
 
 func (mem *Memtable) Delete(key string) {
 
-	node := mem.Skiplist.find(key)
+	//ako se koristi skip list
+	if(mem.BTree == nil){
+		node := mem.Skiplist.find(key)
 
-	if node != nil {
+		if node != nil {
 
-		if !node.tombstone {
-			node.tombstone = true
+			if !node.tombstone {
+				node.tombstone = true
+			}
+		} else {
+			mem.Skiplist.Add(key, make([]byte, 0))
+			mem.Skiplist.logicDelete(key)
+			mem.size++
 		}
-	} else {
-		mem.Skiplist.Add(key, make([]byte, 0))
-		mem.Skiplist.logicDelete(key)
-		mem.size++
-	}
+	}else if(mem.Skiplist == nil){
+		_,_,node,_ := mem.BTree.Find(key)
 
+		var data *Data
+		for _,n := range node.datas{
+			if(n.key == key){
+				data = &n
+			}
+		}
+		if data != nil {
+			if !data.tombstone {
+				data.tombstone = true
+			}
+		} else {
+			mem.BTree.Add(mem.BTree,key, make([]byte, 0))
+			mem.BTree.LogicDelete(key)
+			mem.size++
+		}
+	}
 }
 
 func (mem *Memtable) Flush() {
 
-	sst := NewSSTable()
+	//ako se koristi skip list
+	if(mem.BTree == nil){
+		sst := NewSSTable()
 
-	fmt.Println(mem.size)
-	listNode := mem.Skiplist.Print()
+		fmt.Println(mem.size)
+		listNode := mem.Skiplist.Print()
 
-	listRec := make([]*Record, 0)
+		listRec := make([]*Record, 0)
 
-	for _, element := range *listNode {
+		for _, element := range *listNode {
 
-		rec := NewRecord(element.key, element.value, element.tombstone, element.timestamp)
-		listRec = append(listRec, rec)
+			rec := NewRecord(element.key, element.value, element.tombstone, element.timestamp)
+			listRec = append(listRec, rec)
 
+		}
+
+		sst.Write_table(&listRec)
+
+		mem.size = 0
+		mem.Skiplist = CreateSkipList()
+		
+	//ako koristi BTree
+	}else if(mem.Skiplist == nil){
+		sst := NewSSTable()
+
+		fmt.Println(mem.size)
+		listNode := mem.BTree.GetAll()
+
+		listRec := make([]*Record, 0)
+
+		for _, element := range *listNode {
+
+			rec := NewRecord(element.key, element.value, element.tombstone, element.timestamp)
+			listRec = append(listRec, rec)
+
+		}
+
+		sst.Write_table(&listRec)
+
+		mem.size = 0
+		mem.BTree = CreateBTree(3)
 	}
-
-	sst.Write_table(&listRec)
-
-	mem.size = 0
-	mem.Skiplist = CreateSkipList()
-
 }

@@ -38,7 +38,7 @@ func setConfig() *Config {
 }
 
 func main() {
-	config := setConfig()
+	//config := setConfig()
 
 	// //append Record
 	// AppendRecordWal(config, false, "key3", []byte("value3"))
