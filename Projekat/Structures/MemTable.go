@@ -193,7 +193,7 @@ func (mem *Memtable) Find(key string) []byte {
 
 }
 
-func (mem *Memtable) Delete(key string) {
+func (mem *Memtable) Delete(key string){
 
 	//ako se koristi skip list
 	if(mem.BTree == nil){
@@ -209,6 +209,7 @@ func (mem *Memtable) Delete(key string) {
 			mem.Skiplist.logicDelete(key)
 			mem.size++
 		}
+	//ako se koristi BTree
 	}else if(mem.Skiplist == nil){
 		_,_,node,_ := mem.BTree.Find(key)
 
@@ -241,7 +242,7 @@ func (mem *Memtable) Flush() {
 		sst := NewSSTable()
 
 		fmt.Println(mem.size)
-		listNode := mem.Skiplist.Print()
+		listNode := mem.Skiplist.GetAll()
 
 		listRec := make([]*Record, 0)
 
