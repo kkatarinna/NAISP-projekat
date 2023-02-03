@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"time"
 	"io/ioutil"
 	"log"
 	"math/rand"
 	. "projekat/Structures"
+	"time"
 
 	. "projekat/Structures/SSTable"
 
@@ -40,7 +40,7 @@ func setConfig() *Config {
 }
 
 func main() {
-	//config := setConfig()
+	config := setConfig()
 
 	timestamp := time.Now().Unix()
 	tokenbucket := &TokenBucket{Time: timestamp, Tokens: config.TokensNumber}
