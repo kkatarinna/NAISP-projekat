@@ -54,9 +54,11 @@ func (mr MerkleRoot) FormMerkleTree(filepath string, data [][]byte, serialize bo
 		leaf := NodeMerkle{data: d[:], left: nil, right: nil}
 		nodes = append(nodes, leaf)
 	}
-	if serialize {
-		Serialize(filepath, data)
-	}
+
+	//serijalizacija listova
+	//if serialize {
+	//	Serialize(filepath, data)
+	//}
 	i := 0
 	h1 := nodes
 
@@ -81,6 +83,7 @@ func (mr MerkleRoot) FormMerkleTree(filepath string, data [][]byte, serialize bo
 		h1 = h2
 		if len(h1) == 1 {
 			mr.root = &h1[0]
+			mr.SerializeRoot(filepath)
 			return mr
 		}
 	}
@@ -103,6 +106,14 @@ func Serialize(filepath string, data [][]byte) {
 	file.Close()
 }
 
+func (mr MerkleRoot)SerializeRoot(filepath string){
+	file, err := os.OpenFile(filepath, os.O_WRONLY|os.O_CREATE, 0666)
+	if err != nil {
+		panic(err)
+	}
+	file.Write(mr.root.data)
+	file.Close()
+}
 // ucitava samo lisce koristi za ucitavanje stabla
 func LoadLeafs(filepath string) [][]byte {
 	data2 := []NodeSerialize{}
