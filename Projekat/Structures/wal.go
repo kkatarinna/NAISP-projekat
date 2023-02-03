@@ -30,6 +30,10 @@ import (
    Timestamp = Timestamp of the operation in seconds
 */
 
+type ConfigWal struct {
+	
+}
+
 const (
 	CRC_SIZE        = 4
 	TIMESTAMP_SIZE  = 8
@@ -72,15 +76,20 @@ func CRC32Wal(data []byte) uint32 {
 // 	// res, _ := isWalEmpty()
 // 	// fmt.Println(res)
 
-// 	//append Record
-// 	AppendRecordWal(true, "key3", []byte("value3"))
+// //append Record
+// success := AppendRecordWal(config, false, "key3", []byte("value3"))
+// fmt.Println(success)
+// success2 := AppendRecordWal(config, false, "key2", []byte("value3"))
+// fmt.Println(success2)
+// success3 := AppendRecordWal(config, true, "key3", []byte("value3"))
+// fmt.Println(success3)
 
-// 	//read
-// 	data, err := ReadAllWal()
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	fmt.Println(data)
+// //read
+// data, err := ReadAllWal()
+// if err != nil {
+// 	log.Fatal(err)
+// }
+// fmt.Println(data)
 
 // }
 
@@ -176,11 +185,11 @@ func fileLenWal(file *os.File) (int64, error) {
 	return info.Size(), nil
 }
 
-func AppendRecordWal(tombStone bool, key string, value []byte) {
+func AppendRecordWal(config *Config, tombStone bool, key string, value []byte) bool {
 	//find active file
-	activeFile, err := getActiveFile()
+	activeFile, err := getActiveFile(config)
 	if err != nil {
-		log.Fatal(err)
+		return false
 	}
 	//convert data to binary
 	dataBinary := dataToBinaryWal(tombStone, key, value)
@@ -189,14 +198,15 @@ func AppendRecordWal(tombStone bool, key string, value []byte) {
 	//append
 	f, err := os.OpenFile(completeActiveFile, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
-		log.Fatal(err)
+		return false
 	}
 	defer f.Close()
 
 	err = appendDataWal(f, dataBinary)
 	if err != nil {
-		log.Fatal(err)
+		return false
 	}
+	return true
 }
 
 func dataToBinaryWal(tombStone bool, key string, value []byte) []byte {
@@ -255,7 +265,7 @@ func getNumberOfRecordsWal(activeFile string) int {
 	return len(data)
 }
 
-func getActiveFile() (string, error) {
+func getActiveFile(config *Config) (string, error) {
 	allFiles, err := listAllFilesWal()
 	if err != nil {
 		return "", err
@@ -266,7 +276,7 @@ func getActiveFile() (string, error) {
 	} else {
 		activeFile := "./Data/wal/" + allFiles[len(allFiles)-1]
 
-		if getNumberOfRecordsWal(activeFile) < 3 {
+		if getNumberOfRecordsWal(activeFile) < config.SegmentSize {
 			return allFiles[len(allFiles)-1], nil
 		}
 

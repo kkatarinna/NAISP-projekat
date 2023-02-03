@@ -2,3 +2,7 @@ wal_size: 10
 memtable_size: 10
 trashold: 50
 memtable_structure: btree
+
+segment_size: 3
+time_interval: 60
+tokens_number: 5

@@ -4,8 +4,8 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math/rand"
-	"time"
 	. "projekat/Structures/SSTable"
+	"time"
 )
 
 const MAX_HEIGHT = 16
@@ -300,6 +300,23 @@ func (sl SkipList) Print() *[]*SkipListNode {
 		fmt.Printf("adresa:%p, key:%s, tombstone:%v, timestamp:%v, value:%v, next:%v\n", here, here.key, here.tombstone, here.timestamp, here.value, here.next)
 	}
 	fmt.Println()
+
+	return &list
+}
+
+func (sl SkipList) GetAll() *[]*SkipListNode {
+
+	list := make([]*SkipListNode, 0)
+
+	here := sl.head
+	for {
+		if here.next[0] != nil {
+			here = here.next[0]
+		} else {
+			break
+		}
+		list = append(list, here)
+	}
 
 	return &list
 }
