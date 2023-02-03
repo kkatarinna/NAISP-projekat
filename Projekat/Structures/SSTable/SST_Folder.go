@@ -3,6 +3,7 @@ package sstable
 import (
 	"bufio"
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"log"
 	"os"
@@ -11,6 +12,17 @@ import (
 )
 
 const MAIN_DIR_FOLDERS = "./Data/SSTable_Data/SST_Folders"
+const LVL1 = 2
+const LVL2 = 2
+const LVL3 = 2
+const MAX_LVL = 4
+
+var lvlMap = map[int]int{
+	1: 2,
+	2: 2,
+	3: 2,
+	4: 2,
+}
 
 type SSTable struct {
 	dataFile   *BinaryFile
@@ -23,7 +35,7 @@ type SSTable struct {
 
 func NewSSTable() *SSTable {
 
-	files, err := ioutil.ReadDir(MAIN_DIR_FOLDERS)
+	files, err := ioutil.ReadDir(MAIN_DIR_FOLDERS + "/LVL1")
 
 	if err != nil {
 		fmt.Print(err)
@@ -31,7 +43,7 @@ func NewSSTable() *SSTable {
 
 	i := len(files) + 1
 
-	dir := MAIN_DIR_FOLDERS + "/GEN-" + strconv.Itoa(i)
+	dir := MAIN_DIR_FOLDERS + "/LVL1" + "/GEN-" + strconv.Itoa(i)
 
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 		log.Fatal(err)
@@ -39,7 +51,35 @@ func NewSSTable() *SSTable {
 
 	sst := &SSTable{}
 
-	str := dir + "/usertable-" + strconv.Itoa(i) + "-"
+	str := dir + "/1usertable-" + strconv.Itoa(i) + "-"
+
+	sst.dataFile = newBinaryFile(str + "Data.db")
+
+	sst.indexFile = newBinaryFile(str + "Index.db")
+
+	sst.filterFile = newBinaryFile(str + "Filter.db")
+
+	sst.metaFile = newBinaryFile(str + "Meta.db")
+
+	sst.sumFile = newBinaryFile(str + "Summary.db")
+
+	sst.TOCPath = str + "TOC.txt"
+
+	return sst
+
+}
+
+func NewSSTableParam(lvl int, gen int) *SSTable {
+
+	dir := MAIN_DIR_FOLDERS + "/LVL" + strconv.Itoa(lvl) + "/GEN-" + strconv.Itoa(gen)
+
+	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+		log.Fatal(err)
+	}
+
+	sst := &SSTable{}
+
+	str := dir + "/" + strconv.Itoa(lvl) + "usertable-" + strconv.Itoa(gen) + "-"
 
 	sst.dataFile = newBinaryFile(str + "Data.db")
 
@@ -90,6 +130,28 @@ func getSSTable(index int) *SSTable {
 	sst.TOCPath = str + "TOC.txt"
 
 	return sst
+
+}
+
+func Rename() {
+
+	dir := MAIN_DIR_FOLDERS + "/LVL1"
+	files, _ := ioutil.ReadDir(dir)
+
+	for i := 0; i < len(files); i++ {
+
+		strArr := []rune((files)[i].Name())
+		gen := string(strArr[4:])
+		replace := dir + "/GEN-" + strconv.Itoa(i+1)
+		os.Rename(dir+"/"+(files)[i].Name(), replace)
+		os.Rename(replace+"/1usertable-"+gen+"-Data.db", replace+"/1usertable-"+strconv.Itoa(i+1)+"-Data.db")
+		os.Rename(replace+"/1usertable-"+gen+"-Index.db", replace+"/1usertable-"+strconv.Itoa(i+1)+"-Index.db")
+		os.Rename(replace+"/1usertable-"+gen+"-Filter.db", replace+"/1usertable-"+strconv.Itoa(i+1)+"-Filter.db")
+		os.Rename(replace+"/1usertable-"+gen+"-Meta.db", replace+"/1usertable-"+strconv.Itoa(i+1)+"-Meta.db")
+		os.Rename(replace+"/1usertable-"+gen+"-Summary.db", replace+"/1usertable-"+strconv.Itoa(i+1)+"-Summary.db")
+		os.Rename(replace+"/1usertable-"+gen+"-TOC.txt", replace+"/1usertable-"+strconv.Itoa(i+1)+"-TOC.txt")
+
+	}
 
 }
 
@@ -294,4 +356,223 @@ func Find_record_Folders(key string) *Record {
 	}
 
 	return nil
+}
+
+func (SSTable) MergeInit() {
+
+	for i := 1; i <= MAX_LVL; i++ {
+
+		os.MkdirAll(MAIN_DIR_FOLDERS+"/LVL"+strconv.Itoa(i), os.ModePerm)
+		files, err := ioutil.ReadDir(MAIN_DIR_FOLDERS + "/LVL" + strconv.Itoa(i))
+
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		if len(files) >= lvlMap[i] {
+
+			index := 1
+			slice := files[:len(files)-len(files)%lvlMap[i]]
+			files_next, err2 := ioutil.ReadDir(MAIN_DIR_FOLDERS + "/LVL" + strconv.Itoa(i+1))
+			if err2 != nil {
+				fmt.Print(err)
+			}
+
+			if (lvlMap[i+1] - (len(files_next) + len(slice)/2)) < 0 {
+
+				index = (lvlMap[i+1] - (len(files_next) + len(slice)/2)) + 1
+			} else {
+				index = len(files_next) + 1
+			}
+
+			var next_lvl int
+			if i >= MAX_LVL {
+				next_lvl = i
+			} else {
+				next_lvl = i + 1
+			}
+
+			(SSTable).Merge(SSTable{}, &slice, next_lvl, index)
+
+		}
+
+	}
+
+}
+
+func (SSTable) Merge(files *[]fs.FileInfo, next_dir int, index int) {
+
+	for i := 0; i < len(*files); i += 2 {
+
+		bloom := NewBloom(100, 0.1)
+
+		offset := uint64(0)
+
+		index_list := make([]*Index, 0)
+
+		sst := NewSSTableParam(next_dir, index)
+
+		file3, err := os.Create(sst.dataFile.Filename)
+		if err != nil {
+			fmt.Println("NEMA")
+		}
+		defer file3.Close()
+		fw := bufio.NewWriter(file3)
+
+		strArr := []rune((*files)[i].Name())
+		path1 := (MAIN_DIR_FOLDERS + "/LVL" + strconv.Itoa(next_dir-1) + "/" + (*files)[i].Name() + "/" + strconv.Itoa(next_dir-1) + "usertable-" + string(strArr[4:]) + "-Data.db")
+		file1, err := os.Open(path1)
+		if err != nil {
+			fmt.Println("NEMA")
+		}
+		defer file1.Close()
+		fr1 := bufio.NewReader(file1)
+
+		strArr = []rune((*files)[i+1].Name())
+		path2 := (MAIN_DIR_FOLDERS + "/LVL" + strconv.Itoa(next_dir-1) + "/" + (*files)[i+1].Name() + "/" + strconv.Itoa(next_dir-1) + "usertable-" + string(strArr[4:]) + "-Data.db")
+		file2, err := os.Open(path2)
+		if err != nil {
+			fmt.Println("NEMA")
+		}
+		defer file2.Close()
+
+		fr2 := bufio.NewReader(file2)
+
+		r1 := Decode(fr1)
+
+		r2 := Decode(fr2)
+
+		for {
+
+			if r1 == nil {
+
+				for {
+
+					if r2 == nil {
+						break
+					}
+					r_upis := r2
+					size := fw.Available()
+					sst.dataFile.write_record(r_upis, fw)
+					size_after := fw.Available()
+
+					index := newIndex(r_upis.Keysize, r_upis.Key, offset)
+					index_list = append(index_list, index)
+
+					offset = uint64(size-size_after) + offset
+
+					fw.Flush()
+
+					r2 = Decode(fr2)
+
+				}
+
+				break
+
+			}
+
+			if r2 == nil {
+
+				for {
+
+					if r1 == nil {
+						break
+					}
+					r_upis := r1
+					size := fw.Available()
+					sst.dataFile.write_record(r_upis, fw)
+					size_after := fw.Available()
+
+					index := newIndex(r_upis.Keysize, r_upis.Key, offset)
+					index_list = append(index_list, index)
+
+					offset = uint64(size-size_after) + offset
+
+					fw.Flush()
+
+					r1 = Decode(fr1)
+
+				}
+
+				break
+
+			}
+
+			if r1.Key < r2.Key {
+
+				r_upis := r1
+
+				bloom.Add(r_upis.Key)
+
+				size := fw.Available()
+				sst.dataFile.write_record(r_upis, fw)
+				size_after := fw.Available()
+
+				index := newIndex(r_upis.Keysize, r_upis.Key, offset)
+				index_list = append(index_list, index)
+
+				offset = uint64(size-size_after) + offset
+
+				fw.Flush()
+
+				r2 = Decode(fr1)
+
+			} else if r1.Key == r2.Key {
+
+				r_upis := r1
+
+				if r1.Timestamp < r2.Timestamp {
+					r_upis = r2
+
+				}
+
+				bloom.Add(r_upis.Key)
+
+				size := fw.Available()
+				sst.dataFile.write_record(r_upis, fw)
+				size_after := fw.Available()
+
+				index := newIndex(r_upis.Keysize, r_upis.Key, offset)
+				index_list = append(index_list, index)
+
+				offset = uint64(size-size_after) + offset
+
+				fw.Flush()
+
+				r1 = Decode(fr1)
+				r2 = Decode(fr2)
+
+			} else if r1.Key > r2.Key {
+
+				r_upis := r2
+
+				bloom.Add(r_upis.Key)
+
+				size := fw.Available()
+				sst.dataFile.write_record(r_upis, fw)
+				size_after := fw.Available()
+
+				index := newIndex(r_upis.Keysize, r_upis.Key, offset)
+				index_list = append(index_list, index)
+
+				offset = uint64(size-size_after) + offset
+
+				fw.Flush()
+
+				r2 = Decode(fr2)
+
+			}
+		}
+		err = os.RemoveAll(MAIN_DIR_FOLDERS + "/LVL" + strconv.Itoa(next_dir-1) + "/" + (*files)[i].Name() + "/")
+		fmt.Println(err)
+		os.RemoveAll(MAIN_DIR_FOLDERS + "/LVL" + strconv.Itoa(next_dir-1) + "/" + (*files)[i+1].Name() + "/")
+		sst.write_bloom(&bloom)
+		sst.write_index(&index_list)
+
+	}
+
+	if next_dir == 2 {
+		Rename()
+	}
+
 }
