@@ -134,6 +134,10 @@ func (mem *Memtable) Delete(key string) {
 		mem.size++
 	}
 
+	if float64(mem.size) >= float64((mem.memtableSize*mem.trashold)/100.0) {
+		mem.Flush()
+	}
+
 }
 
 func (mem *Memtable) Flush() {
@@ -156,5 +160,10 @@ func (mem *Memtable) Flush() {
 
 	mem.size = 0
 	mem.Skiplist = CreateSkipList()
+
+	err := DeleteWal()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 }
