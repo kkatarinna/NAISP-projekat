@@ -276,7 +276,7 @@ func (sst *SSTableFile) write_offsets(fw *bufio.Writer) {
 
 }
 
-func Find_record_Files(key string) *Record {
+func (SSTableFile) Find_record(key string) *Record {
 
 	for lvl := 1; lvl <= MAX_LVL; lvl++ {
 

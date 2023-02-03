@@ -12,18 +12,20 @@ type Config struct {
 	Trashold          uint64 `yaml:"trashold"`
 	MemtableSize      uint64 `yaml:"memtable_size"`
 	MemtableStructure string `yaml:"memtable_structure"`
-	SegmentSize 	  int  `yaml:"segment_size"`
-	TimeInterval 	  int64  `yaml:"time_interval"`
-	TokensNumber 	  int64  `yaml:"tokens_number"`
+	SegmentSize       int    `yaml:"segment_size"`
+	TimeInterval      int64  `yaml:"time_interval"`
+	TokensNumber      int64  `yaml:"tokens_number"`
+	ssTable           string `yaml:"ssTable"`
 }
 
 type Memtable struct {
-	BTree		 *BTree
+	BTree        *BTree
 	Skiplist     *SkipList
 	trashold     uint64
 	size         uint64
 	memtableSize uint64
 	walSize      uint64
+	ssTable      string
 }
 
 func NewMemPar(c *Config) *Memtable {
@@ -32,10 +34,10 @@ func NewMemPar(c *Config) *Memtable {
 		log.Fatal(err)
 	}
 	//sta ce se desiti ako nije btree da li ce overwrite BTree mem
-	mem := &Memtable{Skiplist:nil,BTree:CreateBTree(3), memtableSize: c.MemtableSize, walSize: c.WalSize, trashold: c.Trashold, size: 0}
-	
-	if(c.MemtableStructure != "btree"){
-		mem = &Memtable{Skiplist: CreateSkipList(),BTree:nil, memtableSize: c.MemtableSize, walSize: c.WalSize, trashold: c.Trashold, size: 0}
+	mem := &Memtable{Skiplist: nil, BTree: CreateBTree(3), memtableSize: c.MemtableSize, walSize: c.WalSize, trashold: c.Trashold, ssTable: c.ssTable, size: 0}
+
+	if c.MemtableStructure != "btree" {
+		mem = &Memtable{Skiplist: CreateSkipList(), BTree: nil, memtableSize: c.MemtableSize, walSize: c.WalSize, trashold: c.Trashold, ssTable: c.ssTable, size: 0}
 	}
 
 	if empty {
@@ -57,8 +59,8 @@ func NewMem() *Memtable {
 		log.Fatal(err)
 	}
 
-	mem := &Memtable{BTree:nil,Skiplist: CreateSkipList(), memtableSize: 10, walSize: 10, trashold: 30, size: 0}
-	
+	mem := &Memtable{BTree: nil, Skiplist: CreateSkipList(), memtableSize: 10, walSize: 10, trashold: 30, size: 0}
+
 	if empty {
 		return mem
 	}
@@ -67,7 +69,6 @@ func NewMem() *Memtable {
 		log.Fatal(err)
 	}
 	mem.ReconstructWal(data)
-	
 
 	return mem
 }
@@ -75,63 +76,63 @@ func NewMem() *Memtable {
 func (mem *Memtable) ReconstructWal(data []Record) {
 	for _, rec := range data {
 		success := false
-		if(mem.Skiplist == nil){
-			success = mem.BTree.AddRecord(mem.BTree,rec)
-		}else{
+		if mem.Skiplist == nil {
+			success = mem.BTree.AddRecord(mem.BTree, rec)
+		} else {
 			success = mem.Skiplist.AddRecord(rec)
 		}
 		if !success {
 			panic("error occured")
-		} 
+		}
 	}
 }
 
 func (mem *Memtable) Insert(key string, value []byte) bool {
 
 	//ako se koristi bTree
-	if(mem.Skiplist == nil){
-		_,_,node2,_ := mem.BTree.Find(key)
+	if mem.Skiplist == nil {
+		_, _, node2, _ := mem.BTree.Find(key)
 		var data *Data
-		for  _,n := range node2.datas{
-			if (n.key == key){
+		for _, n := range node2.datas {
+			if n.key == key {
 				data = &n
 			}
 		}
 
 		if data != nil {
-	
+
 			data.tombstone = false
 			data.value = value
 			data.timestamp = uint64(time.Now().Unix())
 			data.tombstone = false
-	
+
 		} else {
-			mem.BTree.Add(mem.BTree,key, value)
+			mem.BTree.Add(mem.BTree, key, value)
 			mem.size++
 		}
-	
+
 		if float64(mem.size) >= float64((mem.memtableSize*mem.trashold)/100.0) {
 			mem.Flush()
 		}
 
 		return true
 
-	//ako se koristi BTree
-	}else if(mem.BTree == nil){
+		//ako se koristi BTree
+	} else if mem.BTree == nil {
 		node := mem.Skiplist.find(key)
 
 		if node != nil {
-	
+
 			node.tombstone = false
 			node.value = value
 			node.timestamp = uint64(time.Now().Unix())
 			node.tombstone = false
-	
+
 		} else {
 			mem.Skiplist.Add(key, value)
 			mem.size++
 		}
-	
+
 		if float64(mem.size) >= float64((mem.memtableSize*mem.trashold)/100.0) {
 			mem.Flush()
 		}
@@ -139,14 +140,13 @@ func (mem *Memtable) Insert(key string, value []byte) bool {
 		return true
 	}
 
-
 	return false
 }
 
 func (mem *Memtable) Find(key string) []byte {
-	
+
 	//ako se koristi skip list
-	if(mem.BTree == nil){
+	if mem.BTree == nil {
 		node := mem.Skiplist.find(key)
 		var rec *Record
 
@@ -155,7 +155,14 @@ func (mem *Memtable) Find(key string) []byte {
 			return node.value
 
 		} else {
-			rec = Find_record_Files(key)
+			if mem.ssTable == "file" {
+
+				rec = (SSTableFile).Find_record(SSTableFile{}, key)
+
+			} else {
+
+				rec = (SSTable).Find_record(SSTable{}, key)
+			}
 		}
 
 		if rec != nil {
@@ -166,9 +173,9 @@ func (mem *Memtable) Find(key string) []byte {
 			fmt.Println("Nema")
 			return nil
 		}
-	//ako se koristi BTree
-	}else if(mem.Skiplist == nil){
-		found,value,_,_ := mem.BTree.Find(key)
+		//ako se koristi BTree
+	} else if mem.Skiplist == nil {
+		found, value, _, _ := mem.BTree.Find(key)
 		var rec *Record
 
 		if found {
@@ -176,7 +183,14 @@ func (mem *Memtable) Find(key string) []byte {
 			return value
 
 		} else {
-			rec = Find_record_Files(key)
+			if mem.ssTable == "file" {
+
+				rec = (SSTableFile).Find_record(SSTableFile{}, key)
+
+			} else {
+
+				rec = (SSTable).Find_record(SSTable{}, key)
+			}
 		}
 
 		if rec != nil {
@@ -193,10 +207,10 @@ func (mem *Memtable) Find(key string) []byte {
 
 }
 
-func (mem *Memtable) Delete(key string){
+func (mem *Memtable) Delete(key string) {
 
 	//ako se koristi skip list
-	if(mem.BTree == nil){
+	if mem.BTree == nil {
 		node := mem.Skiplist.find(key)
 
 		if node != nil {
@@ -209,13 +223,13 @@ func (mem *Memtable) Delete(key string){
 			mem.Skiplist.logicDelete(key)
 			mem.size++
 		}
-	//ako se koristi BTree
-	}else if(mem.Skiplist == nil){
-		_,_,node,_ := mem.BTree.Find(key)
+		//ako se koristi BTree
+	} else if mem.Skiplist == nil {
+		_, _, node, _ := mem.BTree.Find(key)
 
 		var data *Data
-		for _,n := range node.datas{
-			if(n.key == key){
+		for _, n := range node.datas {
+			if n.key == key {
 				data = &n
 			}
 		}
@@ -224,7 +238,7 @@ func (mem *Memtable) Delete(key string){
 				data.tombstone = true
 			}
 		} else {
-			mem.BTree.Add(mem.BTree,key, make([]byte, 0))
+			mem.BTree.Add(mem.BTree, key, make([]byte, 0))
 			mem.BTree.LogicDelete(key)
 			mem.size++
 		}
@@ -238,8 +252,7 @@ func (mem *Memtable) Delete(key string){
 func (mem *Memtable) Flush() {
 
 	//ako se koristi skip list
-	if(mem.BTree == nil){
-		sst := NewSSTable()
+	if mem.BTree == nil {
 
 		fmt.Println(mem.size)
 		listNode := mem.Skiplist.GetAll()
@@ -253,14 +266,20 @@ func (mem *Memtable) Flush() {
 
 		}
 
-		sst.Write_table(&listRec)
+		if mem.ssTable == "file" {
+
+			NewSSTableFile().Write_table(&listRec)
+
+		} else {
+
+			NewSSTable().Write_table(&listRec)
+		}
 
 		mem.size = 0
 		mem.Skiplist = CreateSkipList()
-		
-	//ako koristi BTree
-	}else if(mem.Skiplist == nil){
-		sst := NewSSTable()
+
+		//ako koristi BTree
+	} else if mem.Skiplist == nil {
 
 		fmt.Println(mem.size)
 		listNode := mem.BTree.GetAll()
@@ -274,7 +293,14 @@ func (mem *Memtable) Flush() {
 
 		}
 
-		sst.Write_table(&listRec)
+		if mem.ssTable == "file" {
+
+			NewSSTableFile().Write_table(&listRec)
+
+		} else {
+
+			NewSSTable().Write_table(&listRec)
+		}
 
 		mem.size = 0
 		mem.BTree = CreateBTree(3)

@@ -107,8 +107,6 @@ func main() {
 
 	// fmt.Println(cms.Check("o"))
 
-	
-
 	// mem := NewMem()
 	// fmt.Println(mem.Skiplist.Print())
 

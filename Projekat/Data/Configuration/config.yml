@@ -2,6 +2,7 @@ wal_size: 10
 memtable_size: 10
 trashold: 50
 memtable_structure: btree
+ssTable: file
 
 segment_size: 3
 time_interval: 60

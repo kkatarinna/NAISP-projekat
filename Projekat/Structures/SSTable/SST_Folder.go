@@ -319,7 +319,7 @@ func (sst *SSTable) write_bloom(bloom *Bloom) {
 
 }
 
-func Find_record_Folders(key string) *Record {
+func (SSTable) Find_record(key string) *Record {
 
 	for lvl := 1; lvl <= MAX_LVL; lvl++ {
 
