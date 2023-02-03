@@ -185,7 +185,11 @@ func (t BTree)Add(tree *BTree,key string,d []byte) bool{
 		next2 := node.next[(len(node.next)/2):]
 		node1 := Node{datas:n1,next:next1}
 		node2 := Node{datas:n2,next:next2}
-		newDatas := append(parent.datas,middle)
+		newDatas := make([]Data,len(parent.datas)+1)
+		for k := range parent.datas{
+			newDatas[k] = parent.datas[k]
+		}
+		newDatas[len(newDatas) -1] = middle
 		parent.datas = newDatas
 		sort.Slice(parent.datas,func(i,j int) bool{
 			return parent.datas[i].key < parent.datas[j].key
@@ -205,7 +209,11 @@ func (t BTree)Add(tree *BTree,key string,d []byte) bool{
 						tmp2 = tmp
 					}
 				}
-				newNodes := append(parent.next,tmp2)
+				newNodes := make([]*Node,len(parent.next)+1)
+				for k := range parent.next{
+					newNodes[k] = parent.next[k]
+				}
+				newNodes[len(newNodes) -1] = tmp2
 				parent.next = newNodes
 			}
 		}
@@ -213,27 +221,81 @@ func (t BTree)Add(tree *BTree,key string,d []byte) bool{
 		if(len(parent.datas) < tree.m){
 			return true
 		}else{
-			_,_,n,p := tree.Find(parent.datas[0].key)
-			node = n
-			parent = p
-			if(n == tree.root){
-				//naci srednji element
-		
-				middle := p.datas[len(node.datas)/2]
-		
-				//podaci pre srednjeg elementa
-				d1 := p.datas[:(len(node.datas)/2)]
-				next1 := p.next[:(len(node.next)/2)]
-				n1 := Node{datas:d1,next:next1}
-		
-				//podaci nakon srednjeg elementa
-				d2 := p.datas[(len(node.datas)/2)+1:]
-				next2 := p.next[(len(node.next)/2):]
-				n2 := Node{datas:d2,next:next2}
+			for{
+				_,_,n,p := tree.Find(parent.datas[0].key)
+				node = n
+				parent = p
+				if(n == tree.root){
+					//naci srednji element
 				
-				newRoot := Node{datas:[]Data{middle},next:[]*Node{&n1,&n2}}
-				tree.root = &newRoot
-				return true
+					middle := p.datas[len(node.datas)/2]
+				
+					//podaci pre srednjeg elementa
+					d1 := p.datas[:(len(node.datas)/2)]
+					next1 := p.next[:(len(node.next)/2)]
+					n1 := Node{datas:d1,next:next1}
+				
+					//podaci nakon srednjeg elementa
+					d2 := p.datas[(len(node.datas)/2)+1:]
+					next2 := p.next[(len(node.next)/2):]
+					n2 := Node{datas:d2,next:next2}
+
+					newRoot := Node{datas:[]Data{middle},next:[]*Node{&n1,&n2}}
+					tree.root = &newRoot
+					return true
+				}else{
+					//naci srednji element
+				
+					middle := n.datas[len(node.datas)/2]
+				
+					//podaci pre srednjeg elementa
+					d1 := n.datas[:(len(node.datas)/2)]
+					next1 := n.next[:(len(node.next)/2)]
+					node1 := Node{datas:d1,next:next1}
+				
+					//podaci nakon srednjeg elementa
+					d2 := n.datas[(len(node.datas)/2)+1:]
+					next2 := n.next[(len(node.next)/2):]
+					node2 := Node{datas:d2,next:next2}
+
+					newDatas := make([]Data,len(parent.datas)+1)
+					for k := range parent.datas{
+						newDatas[k] = parent.datas[k]
+					}
+					newDatas[len(newDatas) -1] = middle
+					parent.datas = newDatas
+					sort.Slice(parent.datas,func(i,j int) bool{
+						return parent.datas[i].key < parent.datas[j].key
+					})
+
+					//da se pronadje node koji se cepa
+					for i := range parent.next{
+						if(parent.next[i] == node){
+							parent.next[i] = &node1
+							tmp2 := &node2
+							if(i+1 < len(parent.next)){
+								tmp := parent.next[i+1]
+								parent.next[i+1] = tmp2
+								tmp2 = tmp
+								for j :=i+2; j < len(parent.next);j++{
+									tmp = parent.next[j]
+									parent.next[j] = tmp2
+									tmp2 = tmp
+								}
+							}
+							newNodes := make([]*Node,len(parent.next)+1)
+							for k := range parent.next{
+								newNodes[k] = parent.next[k]
+							}
+							newNodes[len(newNodes) -1] = tmp2
+							parent.next = newNodes
+						}
+					}
+					//da li je roditelj pretrpan?
+					if(len(parent.datas) < tree.m){
+						return true
+					}
+				}
 			}
 		}
 	}
@@ -324,19 +386,24 @@ func (tree BTree) LogicDelete(key string) bool{
 //func main(){
 //	tree := CreateBTree(3)
 //	tree.Add(&tree,"A",[]byte{'n'})
+//	tree.Add(&tree,"DA",[]byte{'n'})
+//	tree.Add(&tree,"BD",[]byte{'n'})
 //	tree.Add(&tree,"B",[]byte{'n'})
+//	tree.Add(&tree,"AD",[]byte{'n'})
+//	tree.Add(&tree,"AA",[]byte{'n'})
+//	tree.Add(&tree,"BA",[]byte{'n'})
+//	tree.Add(&tree,"CC",[]byte{'n'})
 //	tree.Add(&tree,"C",[]byte{'n'})
-//	tree.Add(&tree,"I",[]byte{'n'})
-//	tree.Add(&tree,"E",[]byte{'n'})
-//	tree.Add(&tree,"H",[]byte{'n'})
-//	tree.Add(&tree,"N",[]byte{'n'})
-//	tree.Add(&tree,"F",[]byte{'n'})
-//	tree.Add(&tree,"J",[]byte{'n'})
-//	tree.Add(&tree,"M",[]byte{'n'})
-//	tree.Add(&tree,"L",[]byte{'n'})
-//	tree.Add(&tree,"K",[]byte{'n'})
+//	tree.Add(&tree,"DC",[]byte{'n'})
+//	tree.Add(&tree,"BC",[]byte{'n'})
+//	tree.Add(&tree,"DD",[]byte{'n'})
+//	tree.Add(&tree,"BB",[]byte{'n'})
 //	tree.Add(&tree,"D",[]byte{'n'})
-//	tree.Add(&tree,"O",[]byte{'n'})
-//	tree.Add(&tree,"G",[]byte{'n'})
+//	tree.Add(&tree,"AB",[]byte{'n'})
+//	tree.Add(&tree,"AC",[]byte{'n'})
+//	tree.Add(&tree,"CB",[]byte{'n'})
+//	tree.Add(&tree,"CD",[]byte{'n'})
+//	tree.Add(&tree,"CA",[]byte{'n'})
+//	tree.Add(&tree,"DB",[]byte{'n'})
 //	tree.PrintBTreeWidth()
 //}
