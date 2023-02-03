@@ -12,6 +12,9 @@ type Config struct {
 	Trashold          uint64 `yaml:"trashold"`
 	MemtableSize      uint64 `yaml:"memtable_size"`
 	MemtableStructure string `yaml:"memtable_structure"`
+	SegmentSize 	  int  `yaml:"segment_size"`
+	TimeInterval 	  int64  `yaml:"time_interval"`
+	TokensNumber 	  int64  `yaml:"tokens_number"`
 }
 
 type Memtable struct {

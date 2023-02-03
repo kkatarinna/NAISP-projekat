@@ -9,44 +9,44 @@ const (
 	TOKENS_NUMBER = 3
 )
 
-type tokenBucket struct {
-	time int64
-	tokens int64
+type TokenBucket struct {
+	Time int64
+	Tokens int64
 }
 
 // func main() {
 
-// 	//init first bucket, will be done from main
-// 	timestamp := time.Now().Unix()
-// 	tokenbucket := &tokenBucket{time: timestamp, tokens: TOKENS_NUMBER}
+	// //init first bucket, will be done from main
+	// timestamp := time.Now().Unix()
+	// tokenbucket := &TokenBucket{Time: timestamp, Tokens: config.TokensNumber}
 
-// 	for {
-// 		var input string
-// 		fmt.Println("1. send\n2. exit: ")
-// 		fmt.Scanln(&input)
-// 		if input == "1"{
-// 			success := CheckTokenBucket(tokenbucket)
-// 			fmt.Println(success)
-// 		} else if input == "2" {
-// 			break
-// 		}
-// 	}
+	// for {
+	// 	var input string
+	// 	fmt.Println("1. send\n2. exit: ")
+	// 	fmt.Scanln(&input)
+	// 	if input == "1"{
+	// 		success := CheckTokenBucket(config, tokenbucket)
+	// 		fmt.Println(success)
+	// 	} else if input == "2" {
+	// 		break
+	// 	}
+	// }
 	
 // }
 
-func CheckTokenBucket(tbucket *tokenBucket) (bool) {
+func CheckTokenBucket(config *Config, tbucket *TokenBucket) (bool) {
 	now := time.Now().Unix()
-	difference := now - tbucket.time
+	difference := now - tbucket.Time
 
-	if difference < TIME_INTERVAL {
-		if tbucket.tokens > 0 {
-			tbucket.tokens = tbucket.tokens - 1
+	if difference < config.TimeInterval {
+		if tbucket.Tokens > 0 {
+			tbucket.Tokens = tbucket.Tokens - 1
 			return true
 		}
 		return false
 	} else {
-		tbucket.time = now
-		tbucket.tokens = TOKENS_NUMBER - 1
+		tbucket.Time = now
+		tbucket.Tokens = config.TokensNumber - 1
 
 		return true
 	}

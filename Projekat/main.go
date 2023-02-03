@@ -38,11 +38,12 @@ func setConfig() *Config {
 }
 
 func main() {
+	config := setConfig()
 
 	// //append Record
-	// AppendRecordWal(false, "key3", []byte("value3"))
-	// AppendRecordWal(false, "key2", []byte("value3"))
-	// AppendRecordWal(true, "key3", []byte("value3"))
+	// AppendRecordWal(config, false, "key3", []byte("value3"))
+	// AppendRecordWal(config, false, "key2", []byte("value3"))
+	// AppendRecordWal(config, true, "key3", []byte("value3"))
 
 	// //read
 	// data, err := ReadAllWal()
@@ -92,7 +93,7 @@ func main() {
 
 	// fmt.Println(cms.Check("o"))
 
-	// config := setConfig()
+	
 
 	// mem := NewMem()
 	// fmt.Println(mem.Skiplist.Print())

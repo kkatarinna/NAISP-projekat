@@ -30,6 +30,10 @@ import (
    Timestamp = Timestamp of the operation in seconds
 */
 
+type ConfigWal struct {
+	
+}
+
 const (
 	CRC_SIZE        = 4
 	TIMESTAMP_SIZE  = 8
@@ -176,9 +180,9 @@ func fileLenWal(file *os.File) (int64, error) {
 	return info.Size(), nil
 }
 
-func AppendRecordWal(tombStone bool, key string, value []byte) {
+func AppendRecordWal(config *Config, tombStone bool, key string, value []byte) {
 	//find active file
-	activeFile, err := getActiveFile()
+	activeFile, err := getActiveFile(config)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -255,7 +259,7 @@ func getNumberOfRecordsWal(activeFile string) int {
 	return len(data)
 }
 
-func getActiveFile() (string, error) {
+func getActiveFile(config *Config) (string, error) {
 	allFiles, err := listAllFilesWal()
 	if err != nil {
 		return "", err
@@ -266,7 +270,7 @@ func getActiveFile() (string, error) {
 	} else {
 		activeFile := "./Data/wal/" + allFiles[len(allFiles)-1]
 
-		if getNumberOfRecordsWal(activeFile) < 3 {
+		if getNumberOfRecordsWal(activeFile) < config.SegmentSize {
 			return allFiles[len(allFiles)-1], nil
 		}
 
