@@ -14,6 +14,7 @@ func Put(config *Config, mem *Memtable) bool {
 		fmt.Printf("Unesite vrednost >>")
 		var value string
 		fmt.Scanln(&value)
+		fmt.Println("podatak: ", []byte(value))
 
 		successfulWalAppend := AppendRecordWal(config, false, key, []byte(value))
 		if !successfulWalAppend {
@@ -42,27 +43,36 @@ func Delete(config *Config, mem *Memtable) bool {
 	}
 }
 
-func Get(key string, mem *Memtable) []byte {
+func Get(mem *Memtable,cache *Cache) (bool,[]byte) {
+
+	fmt.Printf("Unesite kljuc >>")
+	var key string
+	fmt.Scanln(&key)
 
 	valmem := mem.Find(key)
 	if valmem != nil {
-		cash.Set(key, valmem)
-		return mem.Find(key)
+		cache.Set(key, valmem)
+		return true,valmem
 	}
-	valcash, _ := cash.Get(key)
+	valcash, _ := cache.Get(key)
 	if valcash != nil {
-		cash.Set(key, valcash)
-		return valcash
+		cache.Set(key, valcash)
+		return true,valcash
 	}
+	
+	var rec *Record
 
 	if mem.ssTable == "file" {
-
-		(SSTableFile).Find_record(SSTableFile{}, key)
-
+		rec = (SSTableFile).Find_record(SSTableFile{}, key)
+		//ubaciti u cache posle fajla ovde...
 	} else {
-
-		(SSTable).Find_record(SSTable{}, key)
+		rec = (SSTable).Find_record(SSTable{}, key)
+		//ubaciti u cache posle fajla ovde...
 	}
+	
+	if rec != nil {
+		return true, rec.Value
+	} 
 
-	return nil
+	return false,nil
 }

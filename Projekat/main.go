@@ -47,6 +47,7 @@ func main() {
 	timestamp := time.Now().Unix()
 	tokenbucket := &TokenBucket{Time: timestamp, Tokens: config.TokensNumber}
 
+	cache := NewCache(10)
 	mem := NewMem()
 
 	for {
@@ -70,7 +71,12 @@ func main() {
 			}
 
 		} else if input == "2" {
-			fmt.Println("GET")
+			successfulGet,value := Get(mem,cache)
+			if successfulGet{
+				fmt.Println("Podatak: ",value)
+			} else {
+				fmt.Println("\nPodatak ne postoji")
+			}
 
 		} else if input == "3" {
 			successfulDelete := Delete(config, mem)
@@ -85,6 +91,7 @@ func main() {
 		} else {
 			fmt.Println("Nije ispravan unos")
 		}
+		mem.Print()
 	}
 
 	// var bf = NewCms(0.1, 0.1)

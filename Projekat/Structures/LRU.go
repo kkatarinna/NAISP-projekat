@@ -2,7 +2,6 @@ package structures
 
 import (
 	"container/list"
-	"fmt"
 )
 
 type Cache struct {
@@ -55,15 +54,15 @@ func (c *Cache) RemoveOldest() {
 	}
 }
 
-func main() {
-	fmt.Println("LRU cache")
-	c := NewCache(3)
-	c.Set("Katarina", []byte{1, 2, 3})
-	c.Set("Milos", []byte{4, 5, 6})
-	//c.Set(2, 2)
-	fmt.Println(c.Get("Katarina"))
-	m := NewMem()
-	m.Insert("Katarina", []byte("jhikg"))
-	fmt.Println(m.Find("Katarina"))
-
-}
+//func main() {
+//	fmt.Println("LRU cache")
+//	c := NewCache(3)
+//	c.Set("Katarina", []byte{1, 2, 3})
+//	c.Set("Milos", []byte{4, 5, 6})
+//	//c.Set(2, 2)
+//	fmt.Println(c.Get("Katarina"))
+//	m := NewMem()
+//	m.Insert("Katarina", []byte("jhikg"))
+//	fmt.Println(m.Find("Katarina"))
+//
+//}

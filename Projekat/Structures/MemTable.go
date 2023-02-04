@@ -148,59 +148,56 @@ func (mem *Memtable) Find(key string) []byte {
 	//ako se koristi skip list
 	if mem.BTree == nil {
 		node := mem.Skiplist.find(key)
-		var rec *Record
-
 		if node != nil {
-
 			return node.value
+		} 
+		return nil
+		//var rec *Record
+		//else {
+		//	if mem.ssTable == "file" {
+//
+		//		rec = (SSTableFile).Find_record(SSTableFile{}, key)
+//
+		//	} else {
+//
+		//		rec = (SSTable).Find_record(SSTable{}, key)
+		//	}
+		//}
 
-		} else {
-			if mem.ssTable == "file" {
-
-				rec = (SSTableFile).Find_record(SSTableFile{}, key)
-
-			} else {
-
-				rec = (SSTable).Find_record(SSTable{}, key)
-			}
-		}
-
-		if rec != nil {
-
-			return rec.Value
-
-		} else {
-			fmt.Println("Nema")
-			return nil
-		}
+		//if rec != nil {
+//
+		//	return rec.Value
+//
+		//} else {
+		//	fmt.Println("Nema")
+		//	return nil
+		//}
 		//ako se koristi BTree
 	} else if mem.Skiplist == nil {
 		found, value, _, _ := mem.BTree.Find(key)
-		var rec *Record
-
 		if found {
-
 			return value
+		} 
+		return nil
+		//var rec *Record
 
-		} else {
-			if mem.ssTable == "file" {
+		//else {
+		//	if mem.ssTable == "file" {
+//
+		//		rec = (SSTableFile).Find_record(SSTableFile{}, key)
+//
+		//	} else {
+//
+		//		rec = (SSTable).Find_record(SSTable{}, key)
+		//	}
+		//}
 
-				rec = (SSTableFile).Find_record(SSTableFile{}, key)
-
-			} else {
-
-				rec = (SSTable).Find_record(SSTable{}, key)
-			}
-		}
-
-		if rec != nil {
-
-			return rec.Value
-
-		} else {
-			fmt.Println("Nema")
-			return nil
-		}
+		//if rec != nil {
+//
+		//	return rec.Value
+//
+		//} else {
+		//}
 
 	}
 	return nil
@@ -310,4 +307,12 @@ func (mem *Memtable) Flush() {
 		log.Fatal(err)
 	}
 
+}
+
+func (mem *Memtable) Print(){
+	if(mem.Skiplist == nil){
+		mem.BTree.PrintBTreeWidth()
+	}else{
+		mem.Skiplist.Print()
+	}
 }
