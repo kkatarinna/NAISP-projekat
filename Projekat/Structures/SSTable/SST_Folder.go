@@ -364,6 +364,307 @@ func (SSTable) Find_record(key string) *Record {
 	return nil
 }
 
+// func (SSTable) MergeInit() {
+
+// 	first := -1
+
+// 	for i := MAX_LVL; i > 0; i-- {
+
+// 		os.MkdirAll(MAIN_DIR_FOLDERS+"/LVL"+strconv.Itoa(i), os.ModePerm)
+// 		files, err := ioutil.ReadDir(MAIN_DIR_FOLDERS + "/LVL" + strconv.Itoa(i))
+
+// 		if err != nil {
+// 			fmt.Println(err)
+// 		}
+
+// 		if len(files) != 0 {
+
+// 			first = i
+// 			break
+// 		}
+
+// 	}
+
+// 	for i := 1; i <= MAX_LVL; i++ {
+
+// 		os.MkdirAll(MAIN_DIR_FOLDERS+"/LVL"+strconv.Itoa(i), os.ModePerm)
+// 		files, err := ioutil.ReadDir(MAIN_DIR_FOLDERS + "/LVL" + strconv.Itoa(i))
+
+// 		if err != nil {
+// 			fmt.Println(err)
+// 		}
+
+// 		if len(files) >= lvlMap[i] {
+
+// 			index := 1
+// 			slice := files[:len(files)-len(files)%lvlMap[i]]
+// 			files_next, err2 := ioutil.ReadDir(MAIN_DIR_FOLDERS + "/LVL" + strconv.Itoa(i+1))
+// 			if err2 != nil {
+// 				(SSTable).Merge(SSTable{}, &slice, i, len(files)+1, i, false)
+// 			}
+
+// 			if (lvlMap[i+1] - (len(files_next) + len(slice)/2)) < 0 {
+
+// 				index = (lvlMap[i+1] - (len(files_next) + len(slice)/2))
+// 			} else {
+// 				index = len(files_next) + 1
+// 			}
+
+// 			var next_lvl int
+// 			if i >= MAX_LVL {
+// 				next_lvl = i
+// 			} else {
+// 				next_lvl = i + 1
+// 			}
+
+// 			var del bool
+
+// 			if first == -1 {
+// 				del = true
+// 				first = i
+// 			} else {
+// 				if next_lvl > first {
+// 					del = true
+// 					first++
+// 				} else {
+// 					del = false
+// 				}
+
+// 			}
+
+// 			(SSTable).Merge(SSTable{}, &slice, next_lvl, index, i, del)
+
+// 		}
+
+// 	}
+
+// }
+
+// func (SSTable) Merge(files *[]fs.FileInfo, next_dir int, index int, this_dir int, del bool) {
+
+// 	for i := 0; i < len(*files); i += 2 {
+
+// 		merkle_r := CreateMerkleRoot()
+// 		merkle_b := make([][]byte, 0)
+// 		for i := range merkle_b {
+// 			merkle_b[i] = make([]byte, 0)
+// 		}
+
+// 		offset := uint64(0)
+
+// 		index_list := make([]*Index, 0)
+
+// 		sst := GetSSTableParam(next_dir, index)
+// 		index++
+
+// 		file3, err := os.Create(sst.dataFile.Filename)
+// 		if err != nil {
+// 			fmt.Println("NEMA")
+// 		}
+// 		defer file3.Close()
+// 		fw := bufio.NewWriter(file3)
+
+// 		strArr := []rune((*files)[i].Name())
+// 		gen, _ := strconv.Atoi(string(strArr[4:]))
+// 		ss1 := GetSSTableParam(this_dir, gen)
+
+// 		file1, err := os.Open(ss1.dataFile.Filename)
+// 		if err != nil {
+// 			fmt.Println("NEMA")
+// 		}
+// 		defer file1.Close()
+// 		fr1 := bufio.NewReader(file1)
+
+// 		strArr = []rune((*files)[i+1].Name())
+// 		gen, _ = strconv.Atoi(string(strArr[4:]))
+// 		ss2 := GetSSTableParam(this_dir, gen)
+// 		file2, err := os.Open(ss2.dataFile.Filename)
+// 		if err != nil {
+// 			fmt.Println("NEMA")
+// 		}
+// 		defer file2.Close()
+
+// 		fr2 := bufio.NewReader(file2)
+
+// 		bf1 := ss1.filterFile.read_bloom().GetElem(0.1)
+// 		bf2 := ss2.filterFile.read_bloom().GetElem(0.1)
+
+// 		bloom := NewBloom(uint64(bf1+bf2), 0.1)
+
+// 		r1 := Decode(fr1)
+
+// 		r2 := Decode(fr2)
+
+// 		for {
+
+// 			if r1 == nil {
+
+// 				for {
+
+// 					if r2 == nil {
+// 						break
+// 					}
+// 					r_upis := r2
+
+// 					size := fw.Available()
+// 					sst.dataFile.write_record(r_upis, fw)
+// 					size_after := fw.Available()
+
+// 					if r_upis.Tombstone && (del || next_dir == this_dir) {
+// 						fw = bufio.NewWriter(file3)
+// 					} else {
+
+// 						bloom.Add(r_upis.Key)
+// 						merkle_b = append(merkle_b, r_upis.Value)
+// 						index := newIndex(r_upis.Keysize, r_upis.Key, offset)
+// 						index_list = append(index_list, index)
+
+// 						offset = uint64(size-size_after) + offset
+
+// 					}
+
+// 					fw.Flush()
+
+// 					r2 = Decode(fr2)
+
+// 				}
+
+// 				break
+
+// 			}
+
+// 			if r2 == nil {
+
+// 				for {
+
+// 					if r1 == nil {
+// 						break
+// 					}
+
+// 					r_upis := r1
+
+// 					size := fw.Available()
+// 					sst.dataFile.write_record(r_upis, fw)
+// 					size_after := fw.Available()
+
+// 					if r_upis.Tombstone && (del || next_dir == this_dir) {
+// 						fw = bufio.NewWriter(file3)
+// 					} else {
+
+// 						bloom.Add(r_upis.Key)
+// 						merkle_b = append(merkle_b, r_upis.Value)
+// 						index := newIndex(r_upis.Keysize, r_upis.Key, offset)
+// 						index_list = append(index_list, index)
+
+// 						offset = uint64(size-size_after) + offset
+
+// 					}
+
+// 					fw.Flush()
+
+// 					r1 = Decode(fr1)
+
+// 				}
+
+// 				break
+
+// 			}
+
+// 			if r1.Key < r2.Key {
+
+// 				r_upis := r1
+// 				size := fw.Available()
+// 				sst.dataFile.write_record(r_upis, fw)
+// 				size_after := fw.Available()
+
+// 				if r_upis.Tombstone && (del || next_dir == this_dir) {
+// 					fw = bufio.NewWriter(file3)
+// 				} else {
+
+// 					bloom.Add(r_upis.Key)
+// 					merkle_b = append(merkle_b, r_upis.Value)
+// 					index := newIndex(r_upis.Keysize, r_upis.Key, offset)
+// 					index_list = append(index_list, index)
+
+// 					offset = uint64(size-size_after) + offset
+
+// 				}
+// 				fw.Flush()
+
+// 				r1 = Decode(fr1)
+
+// 			} else if r1.Key == r2.Key {
+
+// 				r_upis := r1
+
+// 				if r1.Timestamp < r2.Timestamp {
+// 					r_upis = r2
+
+// 				}
+// 				size := fw.Available()
+// 				sst.dataFile.write_record(r_upis, fw)
+// 				size_after := fw.Available()
+
+// 				if r_upis.Tombstone && (del || next_dir == this_dir) {
+// 					fw = bufio.NewWriter(file3)
+// 				} else {
+
+// 					bloom.Add(r_upis.Key)
+// 					merkle_b = append(merkle_b, r_upis.Value)
+// 					index := newIndex(r_upis.Keysize, r_upis.Key, offset)
+// 					index_list = append(index_list, index)
+
+// 					offset = uint64(size-size_after) + offset
+
+// 				}
+
+// 				fw.Flush()
+
+// 				r1 = Decode(fr1)
+// 				r2 = Decode(fr2)
+
+// 			} else if r1.Key > r2.Key {
+
+// 				r_upis := r2
+
+// 				size := fw.Available()
+// 				sst.dataFile.write_record(r_upis, fw)
+// 				size_after := fw.Available()
+
+// 				if r_upis.Tombstone && next_dir == this_dir {
+// 					fw = bufio.NewWriter(file3)
+// 				} else {
+
+// 					bloom.Add(r_upis.Key)
+// 					merkle_b = append(merkle_b, r_upis.Value)
+// 					index := newIndex(r_upis.Keysize, r_upis.Key, offset)
+// 					index_list = append(index_list, index)
+
+// 					offset = uint64(size-size_after) + offset
+
+// 				}
+
+// 				fw.Flush()
+
+// 				r2 = Decode(fr2)
+
+// 			}
+// 		}
+// 		err = os.RemoveAll(MAIN_DIR_FOLDERS + "/LVL" + strconv.Itoa(next_dir-1) + "/" + (*files)[i].Name() + "/")
+// 		fmt.Println(err)
+// 		os.RemoveAll(MAIN_DIR_FOLDERS + "/LVL" + strconv.Itoa(next_dir-1) + "/" + (*files)[i+1].Name() + "/")
+// 		sst.write_bloom(&bloom)
+// 		sst.write_index(&index_list)
+// 		merkle_r.FormMerkleTree(sst.metaPath, merkle_b, true)
+
+// 	}
+
+// 	if next_dir == 2 {
+// 		Rename()
+// 	}
+
+// }
+
 func (SSTable) MergeInit() {
 
 	first := -1
@@ -395,17 +696,16 @@ func (SSTable) MergeInit() {
 		}
 
 		if len(files) >= lvlMap[i] {
-
-			index := 1
+			var index int
 			slice := files[:len(files)-len(files)%lvlMap[i]]
 			files_next, err2 := ioutil.ReadDir(MAIN_DIR_FOLDERS + "/LVL" + strconv.Itoa(i+1))
 			if err2 != nil {
 				(SSTable).Merge(SSTable{}, &slice, i, len(files)+1, i, false)
 			}
 
-			if (lvlMap[i+1] - (len(files_next) + len(slice)/2)) < 0 {
+			if (lvlMap[i+1] - (len(files_next) + (len(slice) / lvlMap[i]) + len(slice)%lvlMap[i])) < 0 {
 
-				index = (lvlMap[i+1] - (len(files_next) + len(slice)/2))
+				index = (lvlMap[i+1] - (len(files_next) + (len(slice) / lvlMap[i]) + len(slice)%lvlMap[i]))
 			} else {
 				index = len(files_next) + 1
 			}
@@ -442,7 +742,28 @@ func (SSTable) MergeInit() {
 
 func (SSTable) Merge(files *[]fs.FileInfo, next_dir int, index int, this_dir int, del bool) {
 
-	for i := 0; i < len(*files); i += 2 {
+	readers := make([]*bufio.Reader, 0)
+	var bloom_sum uint
+
+	for buff := 0; buff < len(*files)-1; buff += lvlMap[this_dir] {
+
+		for _, file := range (*files)[buff : buff+lvlMap[this_dir]] {
+
+			strArr := []rune((file).Name())
+			gen, _ := strconv.Atoi(string(strArr[4:]))
+			ss1 := GetSSTableParam(this_dir, gen)
+			bf := ss1.filterFile.read_bloom().GetElem(0.1)
+			bloom_sum += bf
+
+			file1, err := os.Open(ss1.dataFile.Filename)
+			if err != nil {
+				fmt.Println("NEMA")
+			}
+			defer file1.Close()
+			fr := bufio.NewReader(file1)
+			readers = append(readers, fr)
+
+		}
 
 		merkle_r := CreateMerkleRoot()
 		merkle_b := make([][]byte, 0)
@@ -464,203 +785,97 @@ func (SSTable) Merge(files *[]fs.FileInfo, next_dir int, index int, this_dir int
 		defer file3.Close()
 		fw := bufio.NewWriter(file3)
 
-		strArr := []rune((*files)[i].Name())
-		gen, _ := strconv.Atoi(string(strArr[4:]))
-		ss1 := GetSSTableParam(this_dir, gen)
+		bloom := NewBloom(uint64(bloom_sum), 0.1)
 
-		file1, err := os.Open(ss1.dataFile.Filename)
-		if err != nil {
-			fmt.Println("NEMA")
+		records := make([]*Record, 0)
+
+		for _, reader := range readers {
+			records = append(records, Decode(reader))
 		}
-		defer file1.Close()
-		fr1 := bufio.NewReader(file1)
 
-		strArr = []rune((*files)[i+1].Name())
-		gen, _ = strconv.Atoi(string(strArr[4:]))
-		ss2 := GetSSTableParam(this_dir, gen)
-		file2, err := os.Open(ss2.dataFile.Filename)
-		if err != nil {
-			fmt.Println("NEMA")
-		}
-		defer file2.Close()
-
-		fr2 := bufio.NewReader(file2)
-
-		bf1 := ss1.filterFile.read_bloom().GetElem(0.1)
-		bf2 := ss2.filterFile.read_bloom().GetElem(0.1)
-
-		bloom := NewBloom(uint64(bf1+bf2), 0.1)
-
-		r1 := Decode(fr1)
-
-		r2 := Decode(fr2)
+		var r_upis *Record
+		var min_ind int
 
 		for {
+			r_upis = nil
 
-			if r1 == nil {
+			for a, record := range records {
 
-				for {
-
-					if r2 == nil {
-						break
-					}
-					r_upis := r2
-
-					size := fw.Available()
-					sst.dataFile.write_record(r_upis, fw)
-					size_after := fw.Available()
-
-					if r_upis.Tombstone && (del || next_dir == this_dir) {
-						fw = bufio.NewWriter(file3)
-					} else {
-
-						bloom.Add(r_upis.Key)
-						merkle_b = append(merkle_b, r_upis.Value)
-						index := newIndex(r_upis.Keysize, r_upis.Key, offset)
-						index_list = append(index_list, index)
-
-						offset = uint64(size-size_after) + offset
-
-					}
-
-					fw.Flush()
-
-					r2 = Decode(fr2)
-
+				if record != nil {
+					r_upis = record
+					min_ind = a
+					break
 				}
 
+			}
+
+			if r_upis == nil {
 				break
-
 			}
 
-			if r2 == nil {
+			for i := min_ind + 1; i < len(records); i++ {
 
-				for {
+				if records[i] == nil {
+					continue
+				}
+				if records[i].Key < r_upis.Key {
+					r_upis = records[i]
+					min_ind = i
+				}
+				if records[i].Key == r_upis.Key {
 
-					if r1 == nil {
-						break
-					}
+					if records[i].Timestamp > r_upis.Timestamp {
 
-					r_upis := r1
-
-					size := fw.Available()
-					sst.dataFile.write_record(r_upis, fw)
-					size_after := fw.Available()
-
-					if r_upis.Tombstone && (del || next_dir == this_dir) {
-						fw = bufio.NewWriter(file3)
-					} else {
-
-						bloom.Add(r_upis.Key)
-						merkle_b = append(merkle_b, r_upis.Value)
-						index := newIndex(r_upis.Keysize, r_upis.Key, offset)
-						index_list = append(index_list, index)
-
-						offset = uint64(size-size_after) + offset
+						r_upis = records[i]
+						records[min_ind] = Decode(readers[min_ind])
+						min_ind = i
 
 					}
 
-					fw.Flush()
-
-					r1 = Decode(fr1)
-
 				}
+				// if records[i].Key > r_upis.Key {
 
-				break
+				// }
+			}
+
+			size := fw.Available()
+			sst.dataFile.write_record(r_upis, fw)
+			size_after := fw.Available()
+
+			if r_upis.Tombstone && (del || next_dir == this_dir) {
+				fw = bufio.NewWriter(file3)
+			} else {
+
+				bloom.Add(r_upis.Key)
+				merkle_b = append(merkle_b, r_upis.Value)
+				index := newIndex(r_upis.Keysize, r_upis.Key, offset)
+				index_list = append(index_list, index)
+
+				offset = uint64(size-size_after) + offset
 
 			}
 
-			if r1.Key < r2.Key {
+			records[min_ind] = Decode(readers[min_ind])
 
-				r_upis := r1
-				size := fw.Available()
-				sst.dataFile.write_record(r_upis, fw)
-				size_after := fw.Available()
-
-				if r_upis.Tombstone && (del || next_dir == this_dir) {
-					fw = bufio.NewWriter(file3)
-				} else {
-
-					bloom.Add(r_upis.Key)
-					merkle_b = append(merkle_b, r_upis.Value)
-					index := newIndex(r_upis.Keysize, r_upis.Key, offset)
-					index_list = append(index_list, index)
-
-					offset = uint64(size-size_after) + offset
-
-				}
-				fw.Flush()
-
-				r1 = Decode(fr1)
-
-			} else if r1.Key == r2.Key {
-
-				r_upis := r1
-
-				if r1.Timestamp < r2.Timestamp {
-					r_upis = r2
-
-				}
-				size := fw.Available()
-				sst.dataFile.write_record(r_upis, fw)
-				size_after := fw.Available()
-
-				if r_upis.Tombstone && (del || next_dir == this_dir) {
-					fw = bufio.NewWriter(file3)
-				} else {
-
-					bloom.Add(r_upis.Key)
-					merkle_b = append(merkle_b, r_upis.Value)
-					index := newIndex(r_upis.Keysize, r_upis.Key, offset)
-					index_list = append(index_list, index)
-
-					offset = uint64(size-size_after) + offset
-
-				}
-
-				fw.Flush()
-
-				r1 = Decode(fr1)
-				r2 = Decode(fr2)
-
-			} else if r1.Key > r2.Key {
-
-				r_upis := r2
-
-				size := fw.Available()
-				sst.dataFile.write_record(r_upis, fw)
-				size_after := fw.Available()
-
-				if r_upis.Tombstone && next_dir == this_dir {
-					fw = bufio.NewWriter(file3)
-				} else {
-
-					bloom.Add(r_upis.Key)
-					merkle_b = append(merkle_b, r_upis.Value)
-					index := newIndex(r_upis.Keysize, r_upis.Key, offset)
-					index_list = append(index_list, index)
-
-					offset = uint64(size-size_after) + offset
-
-				}
-
-				fw.Flush()
-
-				r2 = Decode(fr2)
-
-			}
+			fw.Flush()
 		}
-		err = os.RemoveAll(MAIN_DIR_FOLDERS + "/LVL" + strconv.Itoa(next_dir-1) + "/" + (*files)[i].Name() + "/")
-		fmt.Println(err)
-		os.RemoveAll(MAIN_DIR_FOLDERS + "/LVL" + strconv.Itoa(next_dir-1) + "/" + (*files)[i+1].Name() + "/")
+
+		for _, file := range *files {
+
+			err := os.RemoveAll(MAIN_DIR_FOLDERS + "/LVL" + strconv.Itoa(next_dir-1) + "/" + file.Name() + "/")
+			if err != nil {
+				fmt.Println(err)
+			}
+
+		}
+
 		sst.write_bloom(&bloom)
 		sst.write_index(&index_list)
 		merkle_r.FormMerkleTree(sst.metaPath, merkle_b, true)
 
-	}
-
-	if next_dir == 2 {
-		Rename()
+		if next_dir == 2 {
+			Rename()
+		}
 	}
 
 }
