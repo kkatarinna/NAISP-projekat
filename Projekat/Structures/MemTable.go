@@ -153,27 +153,6 @@ func (mem *Memtable) Find(key string) ([]byte, bool) {
 			return node.value, node.tombstone
 		}
 		return nil, false
-		//var rec *Record
-		//else {
-		//	if mem.ssTable == "file" {
-		//
-		//		rec = (SSTableFile).Find_record(SSTableFile{}, key)
-		//
-		//	} else {
-		//
-		//		rec = (SSTable).Find_record(SSTable{}, key)
-		//	}
-		//}
-
-		//if rec != nil {
-		//
-		//	return rec.Value
-		//
-		//} else {
-		//	fmt.Println("Nema")
-		//	return nil
-		//}
-		//ako se koristi BTree
 	} else if mem.Skiplist == nil {
 		found, _, node, _ := mem.BTree.Find(key)
 		if found {
@@ -184,25 +163,6 @@ func (mem *Memtable) Find(key string) ([]byte, bool) {
 			}
 		}
 		return nil,false
-		//var rec *Record
-
-		//else {
-		//	if mem.ssTable == "file" {
-		//
-		//		rec = (SSTableFile).Find_record(SSTableFile{}, key)
-		//
-		//	} else {
-		//
-		//		rec = (SSTable).Find_record(SSTable{}, key)
-		//	}
-		//}
-
-		//if rec != nil {
-		//
-		//	return rec.Value
-		//
-		//} else {
-		//}
 
 	}
 	return nil,false

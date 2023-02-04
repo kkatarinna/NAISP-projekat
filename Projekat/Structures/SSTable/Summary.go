@@ -137,6 +137,4 @@ func findOffSum(key string, bf *BinaryFile, offset uint64) *Index {
 
 	}
 
-	return nil
-
 }

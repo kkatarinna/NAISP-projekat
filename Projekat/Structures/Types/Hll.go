@@ -29,12 +29,12 @@ func hash64(s string) uint64 {
 type HLL struct {
 	m   uint64
 	p   uint8
-	reg []uint8
+	Reg []uint8
 }
 
 func (hll *HLL) Estimate() float64 {
 	sum := 0.0
-	for _, val := range hll.reg {
+	for _, val := range hll.Reg {
 		sum += math.Pow(math.Pow(2.0, float64(val)), -1)
 	}
 
@@ -53,7 +53,7 @@ func (hll *HLL) Estimate() float64 {
 
 func (hll *HLL) emptyCount() int {
 	sum := 0
-	for _, val := range hll.reg {
+	for _, val := range hll.Reg {
 		if val == 0 {
 			sum++
 		}
@@ -67,7 +67,7 @@ func NewHll(p uint8) *HLL {
 
 	arr := make([]uint8, int(m))
 
-	hll := HLL{m: uint64(m), p: p, reg: arr}
+	hll := HLL{m: uint64(m), p: p, Reg: arr}
 
 	return &hll
 
@@ -95,18 +95,18 @@ func (hll *HLL) Put(s string) {
 
 	c := bits.TrailingZeros64(uint64(bin)) + 1
 
-	if uint8(c) > hll.reg[bucket] {
+	if uint8(c) > hll.Reg[bucket] {
 
-		hll.reg[bucket] = uint8(c)
+		hll.Reg[bucket] = uint8(c)
 
 	}
 
 }
 
 func (hll HLL) print() {
-	for i := 0; i < len(hll.reg); i++ {
+	for i := 0; i < len(hll.Reg); i++ {
 
-		fmt.Println(hll.reg[i])
+		fmt.Println(hll.Reg[i])
 
 	}
 }
@@ -118,7 +118,7 @@ func (hll *HLL) Encode() []byte {
 
 	for i := 0; uint64(i) < hll.m; i++ {
 
-		binary.Write(&buffer, binary.LittleEndian, hll.reg[i])
+		binary.Write(&buffer, binary.LittleEndian, hll.Reg[i])
 
 	}
 
@@ -143,7 +143,7 @@ func (HLL) Decode(buffer bytes.Buffer) *HLL {
 		binary.Read(&buffer, binary.LittleEndian, &reg[i])
 
 	}
-	hll.reg = reg
+	hll.Reg = reg
 
 	return hll
 }

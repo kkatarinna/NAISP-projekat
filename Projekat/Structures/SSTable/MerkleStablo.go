@@ -114,6 +114,7 @@ func (mr MerkleRoot)SerializeRoot(filepath string){
 	file.Write(mr.root.data)
 	file.Close()
 }
+
 // ucitava samo lisce koristi za ucitavanje stabla
 func LoadLeafs(filepath string) [][]byte {
 	data2 := []NodeSerialize{}
