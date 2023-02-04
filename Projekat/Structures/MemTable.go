@@ -175,11 +175,15 @@ func (mem *Memtable) Find(key string) ([]byte, bool) {
 		//}
 		//ako se koristi BTree
 	} else if mem.Skiplist == nil {
-		_, _, node, _ := mem.BTree.Find(key)
+		found, _, node, _ := mem.BTree.Find(key)
 		if found {
-			return node
+			for _,data := range node.datas{
+				if(data.key == key){
+					return data.value,data.tombstone
+				}
+			}
 		}
-		return nil
+		return nil,false
 		//var rec *Record
 
 		//else {
@@ -201,7 +205,7 @@ func (mem *Memtable) Find(key string) ([]byte, bool) {
 		//}
 
 	}
-	return nil
+	return nil,false
 
 }
 
