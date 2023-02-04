@@ -485,6 +485,112 @@ func (SSTable) List(key string) *[]*Record {
 
 }
 
+func (SSTable) Range(min string, max string) *[]*Record {
+
+	lista := make([]*Record, 0)
+
+	if max < min {
+		return &lista
+	}
+
+	for lvl := 1; lvl <= MAX_LVL; lvl++ {
+
+		files, _ := ioutil.ReadDir(MAIN_DIR_FOLDERS + "/LVL" + strconv.Itoa(lvl))
+		// fmt.Println(len(files))
+		i := len(files)
+
+		for ; i > 0; i-- {
+
+			ss := GetSSTableParam(lvl, i)
+
+			// bloom := ss.filterFile.read_bloom()
+
+			// if !bloom.Check(key) {
+			// 	continue
+			// }
+
+			file, _ := os.Open(ss.sumFile.Filename)
+
+			fr := bufio.NewReader(file)
+
+			h := get_sum(fr)
+
+			mins := string(h.minVal[:])
+
+			var offset_ind *Index
+
+			if min < mins {
+				offset_ind = (Index).Decode(Index{}, fr)
+			} else {
+
+				offset_ind = findOffSum(min, ss.sumFile, 0)
+
+				if offset_ind == nil {
+					continue
+				}
+
+			}
+
+			file, _ = os.Open(ss.indexFile.Filename)
+			file.Seek(int64(offset_ind.offset), 0)
+
+			fr = bufio.NewReader(file)
+
+			var start_index *Index
+
+			start_index = nil
+
+			for {
+
+				i := (Index).Decode(Index{}, fr)
+
+				if i == nil {
+					break
+				}
+
+				if i.key >= min {
+					start_index = i
+					break
+				}
+
+			}
+
+			if start_index == nil {
+				continue
+			}
+
+			file, _ = os.Open(ss.dataFile.Filename)
+			file.Seek(int64(start_index.offset), 0)
+
+			fr = bufio.NewReader(file)
+
+			for {
+
+				record := Decode(fr)
+
+				if record == nil {
+					break
+				}
+
+				if record.Key <= max {
+					if !In(record.Key, &lista) {
+						lista = append(lista, record)
+					}
+
+				} else {
+					break
+				}
+			}
+
+		}
+	}
+
+	fmt.Println(lista)
+
+	return &lista
+
+}
+
 func In(key string, records *[]*Record) bool {
 
 	for _, record := range *records {

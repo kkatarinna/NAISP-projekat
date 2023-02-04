@@ -450,6 +450,128 @@ func (SSTableFile) List(key string) *[]*Record {
 
 }
 
+func (SSTableFile) Range(min string, max string) *[]*Record {
+
+	var buffer uint64
+	var bytes *bytes.Buffer
+
+	lista := make([]*Record, 0)
+
+	if max < min {
+		return &lista
+	}
+
+	for lvl := 1; lvl <= MAX_LVL; lvl++ {
+
+		files, _ := ioutil.ReadDir(MAIN_DIR_FILES + "/LVL" + strconv.Itoa(lvl))
+		// fmt.Println(len(files))
+		i := len(files)
+
+		for ; i > 0; i-- {
+
+			ss := GetSSTableFileParam(lvl, i)
+
+			file, _ := os.Open(ss.sstFile.Filename)
+
+			file.Seek(-32, 2)
+			fr := bufio.NewReader(file)
+
+			ss = ss.Decode(fr, lvl, i)
+
+			file.Seek(int64(ss.sumFile_offset), 0)
+
+			fr = bufio.NewReader(file)
+
+			h := get_sum(fr)
+
+			mins := string(h.minVal[:])
+
+			var offset_ind *Index
+
+			if min < mins {
+				offset_ind = (Index).Decode(Index{}, fr)
+			} else {
+				file.Seek(int64(ss.sumFile_offset), 0)
+
+				offset_ind = findOffSum(min, ss.sstFile, ss.sumFile_offset)
+
+				if offset_ind == nil {
+					continue
+				}
+
+			}
+
+			// rec_ind := findOffInd(key, ss.indexFile, uint64(offset_ind.offset))
+
+			// if rec_ind == nil {
+			// 	continue
+			// }
+
+			file.Seek(int64(ss.indexFile_offset+offset_ind.offset), 0)
+
+			fr = bufio.NewReader(file)
+
+			var start_index *Index
+
+			start_index = nil
+
+			buffer = ss.indexFile_offset + offset_ind.offset
+
+			for {
+
+				if buffer >= ss.sumFile_offset {
+					break
+				}
+
+				i := (Index).Decode(Index{}, fr)
+				bytes = i.Encode()
+				buffer += uint64(bytes.Len())
+
+				if i.key >= min {
+					start_index = i
+					break
+				}
+
+			}
+
+			if start_index == nil {
+				continue
+			}
+
+			buffer = start_index.offset
+			file.Seek(int64(start_index.offset), 0)
+
+			fr = bufio.NewReader(file)
+
+			for {
+
+				if buffer >= ss.indexFile_offset {
+					break
+				}
+
+				record := Decode(fr)
+				bytes = record.Encode()
+				buffer += uint64(bytes.Len())
+
+				if record.Key <= max {
+					if !In(record.Key, &lista) {
+						lista = append(lista, record)
+					}
+
+				} else {
+					break
+				}
+			}
+
+		}
+	}
+
+	fmt.Println(lista)
+
+	return &lista
+
+}
+
 func (sst *SSTableFile) Encode() *bytes.Buffer {
 
 	var buffer bytes.Buffer
