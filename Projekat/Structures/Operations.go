@@ -3,6 +3,7 @@ package structures
 import (
 	"fmt"
 	. "projekat/Structures/SSTable"
+	. "projekat/Structures/Types"
 )
 
 func Put(config *Config, mem *Memtable) bool {
@@ -10,6 +11,7 @@ func Put(config *Config, mem *Memtable) bool {
 		fmt.Printf("Unesite kljuc >>")
 		var key string
 		fmt.Scanln(&key)
+		key += "_r"
 
 		fmt.Printf("Unesite vrednost >>")
 		var value string
@@ -28,11 +30,37 @@ func Put(config *Config, mem *Memtable) bool {
 	}
 }
 
+func PutHll(config *Config, mem *Memtable) bool {
+	for {
+		fmt.Printf("Unesite kljuc >>")
+		var key string
+		fmt.Scanln(&key)
+
+		fmt.Printf("Unesite vrednost >>")
+		var value string
+		fmt.Scanln(&value)
+		fmt.Println("podatak: ", value)
+
+		
+
+		successfulWalAppend := AppendRecordWal(config, false, key, []byte(value))
+		if !successfulWalAppend {
+			return false
+		}
+		successfulMemInsert := mem.Insert(key, []byte(value))
+		if !successfulMemInsert {
+			return false
+		}
+		return true
+	}
+}
+
 func Delete(config *Config, mem *Memtable) bool {
 	for {
 		fmt.Printf("Unesite kljuc >>")
 		var key string
 		fmt.Scanln(&key)
+		key += "_r"
 
 		successfulWalDelete := AppendRecordWal(config, true, key, []byte("deleted"))
 		if !successfulWalDelete {
@@ -48,6 +76,7 @@ func Get(mem *Memtable, cache *Cache) (bool, []byte) {
 	fmt.Printf("Unesite kljuc >>")
 	var key string
 	fmt.Scanln(&key)
+	key += "_r"
 
 	valmem, tomb := mem.Find(key)
 	if valmem != nil {

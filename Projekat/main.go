@@ -58,7 +58,8 @@ func main() {
 		fmt.Println("\n1. PUT")
 		fmt.Println("2. GET")
 		fmt.Println("3. DELETE")
-		fmt.Println("4. MRK")
+		fmt.Println("4. MERGE")
+		fmt.Println("5. HLL PUT")
 		fmt.Println("x. exit")
 		fmt.Printf("Izaberite jednu opciju >>")
 		var input string
