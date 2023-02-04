@@ -317,3 +317,190 @@ func GetCmsNum(cms *Cms) int{
 	return cms.Check(value)
 
 }
+
+func Scan(mem *Memtable){
+
+	fmt.Printf("Unesite min >>")
+	var min string
+	fmt.Scanln(&min)
+
+	fmt.Printf("Unesite max >>")
+	var max string
+	fmt.Scanln(&max)
+
+	file,ssFile,ss := mem.GetSSTable()
+	
+	if(file){
+		if(mem.Skiplist != nil){
+
+			listNode := mem.Skiplist.GetAll()
+	
+			listRec := make([]*Record, 0)
+	
+			for _, element := range *listNode {
+	
+				rec := NewRecord(element.key, element.value, element.tombstone, element.timestamp)
+				listRec = append(listRec, rec)
+	
+			}
+
+			records:= ssFile.Range(min,max,&listRec)
+			for _,r:= range *records{
+				fmt.Println(r.Value)
+			}
+			return 
+
+		}else if(mem.BTree != nil){
+
+			listNode := mem.BTree.GetAll()
+	
+			listRec := make([]*Record, 0)
+	
+			for _, element := range *listNode {
+	
+				rec := NewRecord(element.key, element.value, element.tombstone, element.timestamp)
+				listRec = append(listRec, rec)
+	
+			}
+
+			records := ssFile.Range(min,max,&listRec)
+			for _,r:= range *records{
+				fmt.Println(r.Value)
+			}
+			return 
+
+		}
+	}else{
+		if(mem.Skiplist != nil){
+
+			listNode := mem.Skiplist.GetAll()
+	
+			listRec := make([]*Record, 0)
+	
+			for _, element := range *listNode {
+	
+				rec := NewRecord(element.key, element.value, element.tombstone, element.timestamp)
+				listRec = append(listRec, rec)
+	
+			}
+
+			records:= ss.Range(min,max,&listRec)
+			for _,r:= range *records{
+				fmt.Println(r.Value)
+			}
+			return 
+
+		}else if(mem.BTree != nil){
+
+			listNode := mem.BTree.GetAll()
+	
+			listRec := make([]*Record, 0)
+	
+			for _, element := range *listNode {
+	
+				rec := NewRecord(element.key, element.value, element.tombstone, element.timestamp)
+				listRec = append(listRec, rec)
+	
+			}
+
+			records := ss.Range(min,max,&listRec)
+			for _,r:= range *records{
+				fmt.Println(r.Value)
+			}
+			return 
+		}
+	}
+	fmt.Print("doslo je do greske")
+}
+
+func List(mem *Memtable){
+
+	fmt.Printf("Unesite prefiks >>")
+	var value string
+	fmt.Scanln(&value)
+
+	file,ssFile,ss := mem.GetSSTable()
+	
+	if(file){
+		if(mem.Skiplist != nil){
+
+			listNode := mem.Skiplist.GetAll()
+	
+			listRec := make([]*Record, 0)
+	
+			for _, element := range *listNode {
+	
+				rec := NewRecord(element.key, element.value, element.tombstone, element.timestamp)
+				listRec = append(listRec, rec)
+	
+			}
+
+			records:= ssFile.List(value,&listRec)
+			for _,r:= range *records{
+				fmt.Println(r.Value)
+			}
+			return 
+
+		}else if(mem.BTree != nil){
+
+			listNode := mem.BTree.GetAll()
+	
+			listRec := make([]*Record, 0)
+	
+			for _, element := range *listNode {
+	
+				rec := NewRecord(element.key, element.value, element.tombstone, element.timestamp)
+				listRec = append(listRec, rec)
+	
+			}
+
+			records := ssFile.List(value,&listRec)
+			for _,r:= range *records{
+				fmt.Println(r.Value)
+			}
+			return 
+
+		}
+	}else{
+		if(mem.Skiplist != nil){
+
+			listNode := mem.Skiplist.GetAll()
+	
+			listRec := make([]*Record, 0)
+	
+			for _, element := range *listNode {
+	
+				rec := NewRecord(element.key, element.value, element.tombstone, element.timestamp)
+				listRec = append(listRec, rec)
+	
+			}
+
+			records:= ss.List(value,&listRec)
+			for _,r:= range *records{
+				fmt.Println(r.Value)
+			}
+			return 
+
+		}else if(mem.BTree != nil){
+
+			listNode := mem.BTree.GetAll()
+	
+			listRec := make([]*Record, 0)
+	
+			for _, element := range *listNode {
+	
+				rec := NewRecord(element.key, element.value, element.tombstone, element.timestamp)
+				listRec = append(listRec, rec)
+	
+			}
+
+			records := ss.List(value,&listRec)
+			for _,r:= range *records{
+				fmt.Println(r.Value)
+			}
+			return 
+		}
+	}
+	fmt.Print("doslo je do greske")
+
+}

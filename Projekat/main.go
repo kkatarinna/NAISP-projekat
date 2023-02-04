@@ -128,6 +128,7 @@ func CMSMeni(config *Config, tokenbucket*TokenBucket, mem *Memtable, cache *Cach
 	}
 }
 
+
 func main() {
 	os.MkdirAll(MAIN_DIR_FILES+"/LVL1", os.ModePerm)
 	os.MkdirAll(MAIN_DIR_FOLDERS+"/LVL1", os.ModePerm)
@@ -148,6 +149,8 @@ func main() {
 		fmt.Println("4. MERGE")
 		fmt.Println("5. Hll")
 		fmt.Println("6. CMS")
+		fmt.Println("7. RANGE SCAN")
+		fmt.Println("8. LIST")
 		fmt.Println("x. exit")
 		fmt.Printf("Izaberite jednu opciju >>")
 		var input string
@@ -189,6 +192,10 @@ func main() {
 			HllMeni(config,tokenbucket,mem,cache)
 		} else if input == "6" {
 			CMSMeni(config,tokenbucket,mem,cache)
+		}else if input == "7" {
+			Scan(mem)
+		}else if input == "8" {
+			List(mem)
 		}else {
 			fmt.Println("Nije ispravan unos")
 		}

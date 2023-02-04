@@ -28,6 +28,14 @@ type Memtable struct {
 	ssTable      string
 }
 
+func (mem *Memtable) GetSSTable() (bool,*SSTable, *SSTableFile){
+	if(mem.ssTable == "file"){
+		return true,&SSTable{},nil
+	}else{
+		return false ,nil ,&SSTableFile{}
+	}
+}
+
 func NewMemPar(c *Config) *Memtable {
 	empty, err := IsWalEmpty()
 	if err != nil {
