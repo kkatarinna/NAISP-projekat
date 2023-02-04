@@ -149,37 +149,36 @@ func main() {
 
 	// d.emptyCount()
 
-	// r1 := NewRecord("1", []byte("1234"), false, 0)
-	// r4 := NewRecord("2", []byte("1234"), false, 0)
-	// r := NewRecord("3", []byte("1"), true, 0)
-	// r2 := NewRecord("4", []byte("123"), false, 0)
-	// r3 := NewRecord("5", []byte("1234"), false, 0)
+	// r1 := NewRecord("8", []byte("1234"), false, 0)
+	// r2 := NewRecord("9", []byte("1234"), false, 0)
+	// r3 := NewRecord("10", []byte("1"), true, 0)
+	// r4 := NewRecord("4", []byte("123"), false, 0)
+	// r5 := NewRecord("6", []byte("1234"), false, 0)
 
-	// r1 := NewRecord("7", []byte("1234"), false, 0)
-	// r4 := NewRecord("8", []byte("1234"), false, 0)
-	// r := NewRecord("9", []byte("1"), true, 0)
-	// r2 := NewRecord("5", []byte("123"), false, 0)
+	// r1 := NewRecord("85", []byte("1234"), false, 0)
+	// r4 := NewRecord("15", []byte("1234"), false, 0)
 
 	// list := make([]*Record, 0)
 
-	// list = append(list, r)
-	// list = append(list, r2)
 	// list = append(list, r1)
+	// list = append(list, r2)
+	// list = append(list, r3)
 	// list = append(list, r4)
+	// list = append(list, r5)
 
-	// sst := NewSSTable()
+	// sst := NewSSTableFile()
 
 	// sst.Write_table(&list)
 
-	// list := (SSTable).Range(SSTable{}, "1", "9")
+	// list2 := (SSTableFile).Range(SSTableFile{}, "1", "9", &list)
 
-	// for i := 0; i < len(*list); i++ {
+	// for i := 0; i < len(*list2); i++ {
 
-	// 	fmt.Println((*list)[i])
+	// 	fmt.Println((*list2)[i])
 
 	// }
 
-	// (SSTable).MergeInit(SSTable{})
+	// (SSTableFile).MergeInit(SSTableFile{})
 
 	// (SSTable).Find_record(SSTable{}, "54")
 
