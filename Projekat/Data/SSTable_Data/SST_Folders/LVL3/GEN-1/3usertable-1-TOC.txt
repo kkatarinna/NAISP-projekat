@@ -1,4 +1,0 @@
-./Data/SSTable_Data/SST_Folders/LVL3/GEN-1/3usertable-1-Data.db
-./Data/SSTable_Data/SST_Folders/LVL3/GEN-1/3usertable-1-Index.db
-./Data/SSTable_Data/SST_Folders/LVL3/GEN-1/3usertable-1-Summary.db
-./Data/SSTable_Data/SST_Folders/LVL3/GEN-1/3usertable-1-Filter.db

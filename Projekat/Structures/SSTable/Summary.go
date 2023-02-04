@@ -121,10 +121,6 @@ func findOffSum(key string, bf *BinaryFile, offset uint64) *Index {
 
 	for {
 
-		if r_next == nil {
-			return r
-		}
-
 		if key >= (*r).key && key <= (*r_next).key {
 
 			return r

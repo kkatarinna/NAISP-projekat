@@ -149,23 +149,41 @@ func main() {
 
 	// d.emptyCount()
 
-	// r := NewRecord("1", []byte("1111"), true, 0)
-	// r2 := NewRecord("10", []byte("lala"), false, 0)
-	// r3 := NewRecord("12", []byte("lala"), false, 0)
+	// r1 := NewRecord("22", []byte("1234"), false, 0)
+	// r4 := NewRecord("42", []byte("1234"), false, 0)
+	// r := NewRecord("1", []byte("1"), true, 0)
+	// r2 := NewRecord("269", []byte("123"), false, 0)
+	// r3 := NewRecord("41", []byte("1234"), false, 0)
+
+	// r1 := NewRecord("2261", []byte("1234"), false, 0)
+	// r4 := NewRecord("12", []byte("1234"), false, 0)
+	// r := NewRecord("1", []byte("1"), true, 0)
+	// r2 := NewRecord("269", []byte("123"), false, 0)
+	// r3 := NewRecord("54", []byte("1234"), false, 0)
 
 	// list := make([]*Record, 0)
 
 	// list = append(list, r)
 	// list = append(list, r2)
 	// list = append(list, r3)
+	// list = append(list, r1)
+	// list = append(list, r4)
 
 	// sst := NewSSTableFile()
 
 	// sst.Write_table(&list)
 
-	// (SSTableFile).Merge2Init(SSTableFile{})
+	// list := (SSTableFile).List(SSTableFile{}, "4")
 
-	// (SSTableFile).Find_record(SSTableFile{}, "12")
+	// for i := 0; i < len(*list); i++ {
+
+	// 	fmt.Println((*list)[i])
+
+	// }
+
+	// (SSTableFile).MergeInit(SSTableFile{})
+
+	// (SSTable).Find_record(SSTable{}, "54")
 
 	// hll := (HLL).Decode(HLL{}, &rez.Value)
 

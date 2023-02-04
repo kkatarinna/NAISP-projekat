@@ -10,7 +10,9 @@ import (
 	"log"
 	"os"
 	. "projekat/Structures/Types/Bloom-Filter"
+	"sort"
 	"strconv"
+	"strings"
 )
 
 const MAIN_DIR_FILES = "./Data/SSTable_Data/SST_Files"
@@ -126,6 +128,10 @@ func GetSSTableFileParam(lvl int, gen int) *SSTableFile {
 }
 
 func (sst *SSTableFile) Write_table(list *[]*Record) {
+
+	sort.Slice(*list, func(i, j int) bool {
+		return (*list)[i].Key < (*list)[j].Key
+	})
 
 	bloom := NewBloom(uint64(len(*list)), 0.1)
 	merkle_r := CreateMerkleRoot()
@@ -325,6 +331,123 @@ func (SSTableFile) Find_record(key string) *Record {
 		}
 	}
 	return nil
+}
+
+func (SSTableFile) List(key string) *[]*Record {
+
+	var buffer uint64
+	var bytes *bytes.Buffer
+
+	lista := make([]*Record, 0)
+
+	for lvl := 1; lvl <= MAX_LVL; lvl++ {
+
+		files, _ := ioutil.ReadDir(MAIN_DIR_FILES + "/LVL" + strconv.Itoa(lvl))
+		// fmt.Println(len(files))
+		i := len(files)
+
+		for ; i > 0; i-- {
+
+			ss := GetSSTableFileParam(lvl, i)
+
+			file, _ := os.Open(ss.sstFile.Filename)
+
+			file.Seek(-32, 2)
+			fr := bufio.NewReader(file)
+
+			ss = ss.Decode(fr, lvl, i)
+
+			file.Seek(int64(ss.sumFile_offset), 0)
+
+			fr = bufio.NewReader(file)
+
+			h := get_sum(fr)
+
+			min := string(h.minVal[:])
+
+			var offset_ind *Index
+
+			if key < min {
+				offset_ind = (Index).Decode(Index{}, fr)
+			} else {
+				file.Seek(int64(ss.sumFile_offset), 0)
+
+				offset_ind = findOffSum(key, ss.sstFile, ss.sumFile_offset)
+
+				if offset_ind == nil {
+					continue
+				}
+
+			}
+
+			// rec_ind := findOffInd(key, ss.indexFile, uint64(offset_ind.offset))
+
+			// if rec_ind == nil {
+			// 	continue
+			// }
+
+			file.Seek(int64(ss.indexFile_offset+offset_ind.offset), 0)
+
+			fr = bufio.NewReader(file)
+
+			var start_index *Index
+
+			start_index = nil
+
+			buffer = ss.indexFile_offset + offset_ind.offset
+
+			for {
+
+				if buffer >= ss.sumFile_offset {
+					break
+				}
+
+				i := (Index).Decode(Index{}, fr)
+				bytes = i.Encode()
+				buffer += uint64(bytes.Len())
+
+				if strings.HasPrefix(i.key, key) {
+					start_index = i
+					break
+
+				}
+
+			}
+
+			if start_index == nil {
+				continue
+			}
+
+			buffer = start_index.offset
+			file.Seek(int64(start_index.offset), 0)
+
+			fr = bufio.NewReader(file)
+
+			for {
+
+				if buffer >= ss.indexFile_offset {
+					break
+				}
+
+				record := Decode(fr)
+				bytes = record.Encode()
+				buffer += uint64(bytes.Len())
+
+				if strings.HasPrefix(record.Key, key) {
+					if !In(record.Key, &lista) {
+						lista = append(lista, record)
+					}
+
+				}
+			}
+
+		}
+	}
+
+	fmt.Println(lista)
+
+	return &lista
+
 }
 
 func (sst *SSTableFile) Encode() *bytes.Buffer {
