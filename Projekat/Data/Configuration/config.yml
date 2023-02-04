@@ -6,4 +6,4 @@ ssTable: file
 
 segment_size: 3
 time_interval: 60
-tokens_number: 5
+tokens_number: 15

@@ -58,10 +58,15 @@ func main() {
 		fmt.Println("\n1. PUT")
 		fmt.Println("2. GET")
 		fmt.Println("3. DELETE")
+		fmt.Println("4. MRK")
 		fmt.Println("x. exit")
 		fmt.Printf("Izaberite jednu opciju >>")
 		var input string
 		fmt.Scanln(&input)
+
+		if input == "x" {
+			return
+		}
 		if !CheckTokenBucket(config, tokenbucket) {
 			fmt.Println("\nPrekoracen je broj zahteva u vremenskom intervalu.")
 			continue
@@ -90,8 +95,9 @@ func main() {
 				fmt.Println("\nPodatak nije obrisan, doslo je do greske.")
 			}
 
-		} else if input == "x" {
-			return
+		} else if input == "4" {
+			(SSTable).MergeInit(SSTable{})
+
 		} else {
 			fmt.Println("Nije ispravan unos")
 		}
@@ -153,13 +159,13 @@ func main() {
 	// list = append(list, r2)
 	// list = append(list, r3)
 
-	// sst := NewSSTableFile()
+	// sst := NewSSTable()
 
 	// sst.Write_table(&list)
 
-	// (SSTableFile).MergeInit(SSTableFile{})
+	// (SSTable).MergeInit(SSTable{})
 
-	//Find_record_Files("1")
+	// (SSTable).Find_record(SSTable{}, "4")
 
 	// hll := (HLL).Decode(HLL{}, &rez.Value)
 

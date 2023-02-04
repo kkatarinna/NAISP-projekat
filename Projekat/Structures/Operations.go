@@ -49,8 +49,11 @@ func Get(mem *Memtable, cache *Cache) (bool, []byte) {
 	var key string
 	fmt.Scanln(&key)
 
-	valmem := mem.Find(key)
+	valmem, tomb := mem.Find(key)
 	if valmem != nil {
+		if tomb {
+			return false, nil
+		}
 		cache.Set(key, valmem)
 		return true, valmem
 	}
@@ -58,10 +61,6 @@ func Get(mem *Memtable, cache *Cache) (bool, []byte) {
 	if valcash != nil {
 		cache.Set(key, valcash)
 		return true, valcash
-	}
-
-	if valmem.Tombstone {
-		return false, nil
 	}
 
 	var rec *Record

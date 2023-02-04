@@ -115,11 +115,11 @@ func findOffSum(key string, bf *BinaryFile, offset uint64) *Index {
 
 	}
 
+	r := (Index).Decode(Index{}, fr)
+
+	r_next := (Index).Decode(Index{}, fr)
+
 	for {
-
-		r := (Index).Decode(Index{}, fr)
-
-		r_next := (Index).Decode(Index{}, fr)
 
 		if r_next == nil {
 			return r
@@ -134,6 +134,10 @@ func findOffSum(key string, bf *BinaryFile, offset uint64) *Index {
 		if r_next.key == max {
 			return nil
 		}
+
+		r = r_next
+
+		r_next = (Index).Decode(Index{}, fr)
 
 	}
 
