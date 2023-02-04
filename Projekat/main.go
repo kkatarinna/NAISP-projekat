@@ -54,6 +54,7 @@ func main() {
 	mem := NewMem()
 
 	for {
+		mem.Print()
 		fmt.Println("\n1. PUT")
 		fmt.Println("2. GET")
 		fmt.Println("3. DELETE")
@@ -74,9 +75,9 @@ func main() {
 			}
 
 		} else if input == "2" {
-			successfulGet,value := Get(mem,cache)
-			if successfulGet{
-				fmt.Println("Podatak: ",value)
+			successfulGet, value := Get(mem, cache)
+			if successfulGet {
+				fmt.Println("Podatak: ", value)
 			} else {
 				fmt.Println("\nPodatak ne postoji")
 			}
@@ -94,7 +95,6 @@ func main() {
 		} else {
 			fmt.Println("Nije ispravan unos")
 		}
-		mem.Print()
 	}
 
 	// var bf = NewCms(0.1, 0.1)

@@ -192,9 +192,6 @@ func (sl SkipList) find(key string) *SkipListNode {
 			continue
 		}
 		if key == here.next[len(here.next)-i].key {
-			if(here.next[len(here.next)-i].tombstone){
-				return nil
-			}
 			return here.next[len(here.next)-i]
 		}
 		if here.key > key && here != sl.head {

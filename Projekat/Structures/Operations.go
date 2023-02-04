@@ -43,7 +43,7 @@ func Delete(config *Config, mem *Memtable) bool {
 	}
 }
 
-func Get(mem *Memtable,cache *Cache) (bool,[]byte) {
+func Get(mem *Memtable, cache *Cache) (bool, []byte) {
 
 	fmt.Printf("Unesite kljuc >>")
 	var key string
@@ -52,14 +52,18 @@ func Get(mem *Memtable,cache *Cache) (bool,[]byte) {
 	valmem := mem.Find(key)
 	if valmem != nil {
 		cache.Set(key, valmem)
-		return true,valmem
+		return true, valmem
 	}
 	valcash, _ := cache.Get(key)
 	if valcash != nil {
 		cache.Set(key, valcash)
-		return true,valcash
+		return true, valcash
 	}
-	
+
+	if valmem.Tombstone {
+		return false, nil
+	}
+
 	var rec *Record
 
 	if mem.ssTable == "file" {
@@ -69,10 +73,10 @@ func Get(mem *Memtable,cache *Cache) (bool,[]byte) {
 		rec = (SSTable).Find_record(SSTable{}, key)
 		//ubaciti u cache posle fajla ovde...
 	}
-	
+
 	if rec != nil {
 		return true, rec.Value
-	} 
+	}
 
-	return false,nil
+	return false, nil
 }
