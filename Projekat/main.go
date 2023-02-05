@@ -243,25 +243,25 @@ func main() {
 
 	// d.emptyCount()
 
-	r1 := NewRecord("8", []byte("1234"), false, 0)
-	r2 := NewRecord("9", []byte("1234"), false, 0)
-	r3 := NewRecord("10", []byte("1"), true, 0)
-	r4 := NewRecord("4", []byte("123"), false, 0)
-	r5 := NewRecord("6", []byte("1234"), false, 0)
+	// r1 := NewRecord("8", []byte("1234"), false, 0)
+	// r2 := NewRecord("9", []byte("1234"), false, 0)
+	// r3 := NewRecord("10", []byte("1"), true, 0)
+	// r4 := NewRecord("4", []byte("123"), false, 0)
+	// r5 := NewRecord("6", []byte("1234"), false, 0)
 
-	list := make([]*Record, 0)
+	// list := make([]*Record, 0)
 
-	list = append(list, r1)
-	list = append(list, r2)
-	list = append(list, r3)
-	list = append(list, r4)
-	list = append(list, r5)
+	// list = append(list, r1)
+	// list = append(list, r2)
+	// list = append(list, r3)
+	// list = append(list, r4)
+	// list = append(list, r5)
 
-	sst := NewSSTableFile()
+	// sst := NewSSTable()
 
-	sst.Write_table(&list)
+	// sst.Write_table(&list)
 
-	// (SSTable).MergeInit(SSTable{})
+	(SSTable).MergeInit(SSTable{})
 
 	// list2 := (SSTable).Range(SSTable{}, "1", "9", &list)
 
