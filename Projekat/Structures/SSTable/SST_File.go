@@ -313,7 +313,7 @@ func (SSTableFile) Find_record(key string) *Record {
 				continue
 			}
 
-			rec_ind := findOffInd(key, ss.sstFile, ss.indexFile_offset+offset_ind.offset)
+			rec_ind := findOffInd(key, ss.sstFile, ss.indexFile_offset+offset_ind.offset, ss.sumFile_offset-ss.indexFile_offset)
 
 			if rec_ind == nil {
 				continue
@@ -481,7 +481,7 @@ func (SSTableFile) List(key string, records_mem *[]*Record) *[]*Record {
 
 			}
 
-			if buffers[a-1] < ssts[a-1].indexFile_offset {
+			if buffers[a] < ssts[a-1].indexFile_offset {
 				r_upis = record
 				min_ind = a
 				break
@@ -1097,15 +1097,26 @@ func (SSTableFile) Merge(files *[]fs.FileInfo, next_dir int, index int, this_dir
 		}
 
 		sst.indexFile_offset = offset
-		sst.write_index(&index_list, &offset, fw)
-		sst.write_bloom(&bloom, &offset, fw)
-		sst.dataFile_offset = offset
+		if len(index_list) != 0 {
 
-		sst.write_offsets(fw)
-		fmt.Println(4096 - fw.Available())
-		fw.Flush()
-		file3.Close()
-		merkle_r.FormMerkleTree(sst.metaFile_path, merkle_b, true)
+			sst.write_index(&index_list, &offset, fw)
+			sst.write_bloom(&bloom, &offset, fw)
+			sst.dataFile_offset = offset
+
+			sst.write_offsets(fw)
+			fmt.Println(4096 - fw.Available())
+			fw.Flush()
+			merkle_r.FormMerkleTree(sst.metaFile_path, merkle_b, true)
+			file3.Close()
+
+		} else {
+			file3.Close()
+			err := os.RemoveAll(MAIN_DIR_FILES + "/LVL" + strconv.Itoa(next_dir) + "/GEN-" + strconv.Itoa(index-1))
+			if err != nil {
+				fmt.Println(err)
+			}
+
+		}
 
 	}
 

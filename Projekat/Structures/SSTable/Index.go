@@ -78,8 +78,9 @@ func get_indexes(bf *BinaryFile) *[]Index {
 
 }
 
-func findOffInd(key string, bf *BinaryFile, offset uint64) *Index {
+func findOffInd(key string, bf *BinaryFile, offset uint64, offset_next uint64) *Index {
 
+	var buff uint64
 	file, _ := os.Open(bf.Filename)
 	file.Seek(int64(offset), 0)
 
@@ -87,7 +88,18 @@ func findOffInd(key string, bf *BinaryFile, offset uint64) *Index {
 
 	for {
 
+		if offset_next != 0 {
+
+			if buff >= offset_next {
+				break
+			}
+
+		}
+
 		i := (Index).Decode(Index{}, fr)
+
+		bytess := i.Encode()
+		buff += uint64(bytess.Len())
 
 		if i == nil {
 			break
@@ -95,7 +107,6 @@ func findOffInd(key string, bf *BinaryFile, offset uint64) *Index {
 
 		if i.key == key {
 			return i
-
 		}
 
 	}

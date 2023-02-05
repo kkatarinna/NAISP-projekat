@@ -358,7 +358,7 @@ func (SSTable) Find_record(key string) *Record {
 				continue
 			}
 
-			rec_ind := findOffInd(key, ss.indexFile, uint64(offset_ind.offset))
+			rec_ind := findOffInd(key, ss.indexFile, uint64(offset_ind.offset), 0)
 
 			if rec_ind == nil {
 				continue
@@ -944,9 +944,19 @@ func (SSTable) Merge(files *[]fs.FileInfo, next_dir int, index int, this_dir int
 
 		}
 
-		sst.write_bloom(&bloom)
-		sst.write_index(&index_list)
-		merkle_r.FormMerkleTree(sst.metaPath, merkle_b, true)
+		if len(index_list) != 0 {
+			sst.write_bloom(&bloom)
+			sst.write_index(&index_list)
+			merkle_r.FormMerkleTree(sst.metaPath, merkle_b, true)
+			file3.Close()
+		} else {
+			file3.Close()
+			err := os.RemoveAll(MAIN_DIR_FOLDERS + "/LVL" + strconv.Itoa(next_dir) + "/GEN-" + strconv.Itoa(index-1))
+			if err != nil {
+				fmt.Println(err)
+			}
+
+		}
 
 		if this_dir == 1 || this_dir == 4 {
 			Rename(this_dir)
