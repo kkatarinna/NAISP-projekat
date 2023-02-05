@@ -3,6 +3,7 @@ memtable_size: 3
 trashold: 100
 memtable_structure: skip
 ssTable: folder
+max_lvl: 3
 
 segment_size: 3
 time_interval: 60

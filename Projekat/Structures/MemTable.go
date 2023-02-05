@@ -16,6 +16,7 @@ type Config struct {
 	TimeInterval      int64  `yaml:"time_interval"`
 	TokensNumber      int64  `yaml:"tokens_number"`
 	SSTable           string `yaml:"ssTable"`
+	MaxLvl            int    `yaml:"max_lvl"`
 }
 
 type Memtable struct {
@@ -57,6 +58,8 @@ func NewMemPar(c *Config) *Memtable {
 		log.Fatal(err)
 	}
 	mem.ReconstructWal(data)
+
+	MAX_LVL = c.MaxLvl
 
 	return mem
 }

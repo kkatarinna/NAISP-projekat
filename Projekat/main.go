@@ -229,7 +229,7 @@ func main() {
 
 	// fmt.Println((SSTable).Find_record(SSTable{}, "8_r"))
 
-	// lista := (SSTable).List(SSTable{}, "2", &list)
+	// lista := (SSTable).List(SSTable{}, "1", &list)
 
 	// for _, elem := range *lista {
 

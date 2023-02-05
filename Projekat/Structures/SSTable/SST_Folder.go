@@ -19,7 +19,8 @@ const MAIN_DIR_FOLDERS = "./Data/SSTable_Data/SST_Folders"
 const LVL1 = 2
 const LVL2 = 2
 const LVL3 = 2
-const MAX_LVL = 4
+
+var MAX_LVL = 4
 
 var lvlMap = map[int]int{
 	1: 2,
@@ -407,19 +408,12 @@ func (SSTable) List(key string, records_mem *[]*Record) *[]*Record {
 			gen, _ := strconv.Atoi(string(strArr[4:]))
 			ss1 := GetSSTableParam(lvl, gen)
 			ssts = append(ssts, ss1)
-			// file1, err := os.Open(ss1.dataFile.Filename)
-			// if err != nil {
-			// 	fmt.Println("NEMA")
-			// }
-			// defer file1.Close()
-			// fr := bufio.NewReader(file1)
-			// readers = append(readers, fr)
 
 		}
 
 	}
 
-	for ind, ss := range ssts {
+	for _, ss := range ssts {
 
 		file, _ := os.Open(ss.sumFile.Filename)
 
@@ -431,7 +425,7 @@ func (SSTable) List(key string, records_mem *[]*Record) *[]*Record {
 
 		var offset_ind *Index
 
-		if key < min {
+		if key <= min {
 			offset_ind = (Index).Decode(Index{}, fr)
 		} else {
 
@@ -470,7 +464,7 @@ func (SSTable) List(key string, records_mem *[]*Record) *[]*Record {
 		}
 
 		if start_index == nil {
-			readers[ind] = nil
+			readers = append(readers, nil)
 			continue
 		} else {
 			file, _ := os.Open(ss.dataFile.Filename)
