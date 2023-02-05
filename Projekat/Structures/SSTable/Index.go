@@ -20,6 +20,7 @@ func newIndex(keysize uint64, key string, offset uint64) *Index {
 	return i
 }
 
+// serijalizacija
 func (i *Index) Encode() *bytes.Buffer {
 
 	var buffer bytes.Buffer
@@ -30,6 +31,7 @@ func (i *Index) Encode() *bytes.Buffer {
 	return &buffer
 }
 
+// deserijalizacija
 func (Index) Decode(fr *bufio.Reader) *Index {
 
 	i := newIndex(0, "", 0)
@@ -78,6 +80,7 @@ func get_indexes(bf *BinaryFile) *[]Index {
 
 }
 
+// pronalazak kljuca i njegovog offseta
 func findOffInd(key string, bf *BinaryFile, offset uint64, offset_next uint64) *Index {
 
 	var buff uint64

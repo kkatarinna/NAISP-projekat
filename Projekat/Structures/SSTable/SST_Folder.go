@@ -1,5 +1,6 @@
 package sstable
 
+//sst za folder strukturu
 import (
 	"bufio"
 	"bytes"
@@ -38,6 +39,7 @@ type SSTable struct {
 	TOCPath    string
 }
 
+// konstruktor
 func NewSSTable() *SSTable {
 
 	files, err := ioutil.ReadDir(MAIN_DIR_FOLDERS + "/LVL1")
@@ -74,6 +76,7 @@ func NewSSTable() *SSTable {
 
 }
 
+// vraca odredjenu sstabelu u odnosu na parametre
 func GetSSTableParam(lvl int, gen int) *SSTable {
 
 	dir := MAIN_DIR_FOLDERS + "/LVL" + strconv.Itoa(lvl) + "/GEN-" + strconv.Itoa(gen)
@@ -102,42 +105,7 @@ func GetSSTableParam(lvl int, gen int) *SSTable {
 
 }
 
-// func getSSTable(index int) *SSTable {
-
-// 	files, _ := ioutil.ReadDir(MAIN_DIR_FOLDERS)
-// 	// fmt.Println(len(files))
-// 	i := len(files)
-
-// 	if index < 0 || index > i {
-// 		return nil
-// 	}
-
-// 	dir := MAIN_DIR_FOLDERS + "/GEN-" + strconv.Itoa(index)
-
-// 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
-// 		log.Fatal(err)
-// 	}
-
-// 	sst := &SSTable{}
-
-// 	str := dir + "/usertable-" + strconv.Itoa(index) + "-"
-
-// 	sst.dataFile = newBinaryFile(str + "Data.db")
-
-// 	sst.indexFile = newBinaryFile(str + "Index.db")
-
-// 	sst.filterFile = newBinaryFile(str + "Filter.db")
-
-// 	sst.sumFile = newBinaryFile(str + "Summary.db")
-
-// 	sst.metaPath = str + "Meta.db"
-
-// 	sst.TOCPath = str + "TOC.txt"
-
-// 	return sst
-
-// }
-
+// pravilno indeksira preostale fajlove na nekom nivou
 func Rename(this_dir int) {
 
 	dir := MAIN_DIR_FOLDERS + "/LVL" + strconv.Itoa(this_dir)
@@ -160,6 +128,7 @@ func Rename(this_dir int) {
 
 }
 
+// pocetak pisanja tabele
 func (sst *SSTable) Write_table(list *[]*Record) {
 
 	sort.Slice(*list, func(i, j int) bool {
@@ -210,6 +179,7 @@ func (sst *SSTable) Write_table(list *[]*Record) {
 
 }
 
+// pisanje index fajla
 func (sst *SSTable) write_index(list *[]*Index) {
 
 	file, err := os.Create(sst.indexFile.Filename)
@@ -261,6 +231,7 @@ func (sst *SSTable) write_index(list *[]*Index) {
 
 }
 
+// pisanje summary fajla
 func (sst *SSTable) write_summary(sum *Summary, list *[]*Index) {
 
 	file, err := os.Create(sst.sumFile.Filename)
@@ -285,6 +256,7 @@ func (sst *SSTable) write_summary(sum *Summary, list *[]*Index) {
 
 }
 
+// pisanje toc fajla
 func (sst *SSTable) write_TOC() {
 
 	file, err := os.Create(sst.TOCPath)
@@ -319,6 +291,7 @@ func (sst *SSTable) write_TOC() {
 
 }
 
+// pisanje bloom filea
 func (sst *SSTable) write_bloom(bloom *Bloom) {
 
 	file, err := os.Create(sst.filterFile.Filename)
@@ -335,6 +308,7 @@ func (sst *SSTable) write_bloom(bloom *Bloom) {
 
 }
 
+// obicna pretraga
 func (SSTable) Find_record(key string) *Record {
 
 	for lvl := 1; lvl <= MAX_LVL; lvl++ {
@@ -381,6 +355,7 @@ func (SSTable) Find_record(key string) *Record {
 	return nil
 }
 
+// prefix pretraga
 func (SSTable) List(key string, records_mem *[]*Record) *[]*Record {
 
 	lista := make([]*Record, 0)
@@ -552,6 +527,7 @@ func (SSTable) List(key string, records_mem *[]*Record) *[]*Record {
 
 }
 
+// range pretraga
 func (SSTable) Range(min string, max string, records_mem *[]*Record) *[]*Record {
 
 	lista := make([]*Record, 0)
@@ -722,6 +698,7 @@ func (SSTable) Range(min string, max string, records_mem *[]*Record) *[]*Record 
 
 }
 
+// provera kljuca u listi rekorda
 func In(key string, records *[]*Record) bool {
 
 	for _, record := range *records {
@@ -735,6 +712,7 @@ func In(key string, records *[]*Record) bool {
 
 }
 
+// merge pocetak
 func (SSTable) MergeInit() {
 
 	first := -1
@@ -818,6 +796,7 @@ func (SSTable) MergeInit() {
 
 }
 
+// merge
 func (SSTable) Merge(files *[]fs.FileInfo, next_dir int, index int, this_dir int, del bool) {
 
 	readers := make([]*bufio.Reader, 0)

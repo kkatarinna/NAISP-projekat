@@ -77,11 +77,8 @@ func (Summary) Decode(fr *bufio.Reader) *Summary {
 	return sum
 }
 
+// vraca header sume
 func get_sum(fr *bufio.Reader) *Summary {
-
-	// file, _ := os.Open(bf.Filename)
-
-	// fr := bufio.NewReader(file)
 
 	r1 := (Summary).Decode(Summary{}, fr)
 
@@ -89,6 +86,7 @@ func get_sum(fr *bufio.Reader) *Summary {
 
 }
 
+// trazi offset u index tabeli
 func findOffSum(key string, bf *BinaryFile, offset uint64) *Index {
 
 	file, _ := os.Open(bf.Filename)

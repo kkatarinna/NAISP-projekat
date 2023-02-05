@@ -1,5 +1,6 @@
 package sstable
 
+//klasa za sst fajlove sa fajl organizacijom
 import (
 	"bufio"
 	"bytes"
@@ -26,6 +27,7 @@ type SSTableFile struct {
 	filterFile_offset uint64
 }
 
+// konstruktor
 func NewSSTableFile() *SSTableFile {
 
 	files, err := ioutil.ReadDir(MAIN_DIR_FILES + "/LVL1")
@@ -62,26 +64,7 @@ func NewSSTableFile() *SSTableFile {
 
 }
 
-// func getSSTableFile(index int) *SSTableFile {
-
-// 	files, _ := ioutil.ReadDir(MAIN_DIR_FILES)
-// 	// fmt.Println(len(files))
-// 	i := len(files)
-
-// 	if index < 0 || index > i {
-// 		return nil
-// 	}
-
-// 	dir := MAIN_DIR_FILES + "/GEN-" + strconv.Itoa(index) + ".db"
-
-// 	sst := &SSTableFile{}
-
-// 	sst.sstFile = newBinaryFile(dir)
-
-// 	return sst
-
-// }
-
+// pravilno indeksira preostale fajlove u folderu nakon merga
 func RenameFile(this_dir int) {
 
 	dir := MAIN_DIR_FILES + "/LVL" + strconv.Itoa(this_dir)
@@ -100,6 +83,7 @@ func RenameFile(this_dir int) {
 
 }
 
+// vraca odredjen sst fajl u odnosu na date parametre
 func GetSSTableFileParam(lvl int, gen int) *SSTableFile {
 
 	dir := MAIN_DIR_FILES + "/LVL" + strconv.Itoa(lvl) + "/GEN-" + strconv.Itoa(gen)
@@ -127,6 +111,7 @@ func GetSSTableFileParam(lvl int, gen int) *SSTableFile {
 
 }
 
+// pocetna funkcije pisanja sstabele
 func (sst *SSTableFile) Write_table(list *[]*Record) {
 
 	sort.Slice(*list, func(i, j int) bool {
@@ -182,22 +167,9 @@ func (sst *SSTableFile) Write_table(list *[]*Record) {
 	file.Close()
 	merkle_r.FormMerkleTree(sst.metaFile_path, merkle_b, true)
 
-	file, err = os.Open(sst.sstFile.Filename)
-	if err != nil {
-		log.Fatalf("Failed to open file: %v", err)
-	}
-	defer file.Close()
-
-	fileContents, err := ioutil.ReadAll(file)
-	if err != nil {
-		log.Fatalf("Failed to read file: %v", err)
-	}
-
-	// Print the contents of the file
-	fmt.Printf("File contents: %v\n", fileContents)
-
 }
 
+// pisanje indexa
 func (sst *SSTableFile) write_index(list *[]*Index, prev_offset *uint64, fw *bufio.Writer) {
 
 	index_list := make([]*Index, 0)
@@ -243,6 +215,7 @@ func (sst *SSTableFile) write_index(list *[]*Index, prev_offset *uint64, fw *buf
 
 }
 
+// pisanje summarya
 func (sst *SSTableFile) write_summary(sum *Summary, list *[]*Index, prev_offset *uint64, fw *bufio.Writer) {
 
 	size := fw.Available()
@@ -261,6 +234,7 @@ func (sst *SSTableFile) write_summary(sum *Summary, list *[]*Index, prev_offset 
 
 }
 
+// pisanje blooma
 func (sst *SSTableFile) write_bloom(bloom *Bloom, prev_offset *uint64, fw *bufio.Writer) {
 
 	size := fw.Available()
@@ -273,6 +247,7 @@ func (sst *SSTableFile) write_bloom(bloom *Bloom, prev_offset *uint64, fw *bufio
 
 }
 
+// pisanje offseta svih "fajlova"  u glavnom gajlu
 func (sst *SSTableFile) write_offsets(fw *bufio.Writer) {
 
 	binary_data := sst.Encode()
@@ -280,12 +255,13 @@ func (sst *SSTableFile) write_offsets(fw *bufio.Writer) {
 
 }
 
+// Obicna pretraga
 func (SSTableFile) Find_record(key string) *Record {
 
 	for lvl := 1; lvl <= MAX_LVL; lvl++ {
 
 		files, _ := ioutil.ReadDir(MAIN_DIR_FILES + "/LVL" + strconv.Itoa(lvl))
-		// fmt.Println(len(files))
+
 		i := len(files)
 
 		for ; i > 0; i-- {
@@ -333,6 +309,7 @@ func (SSTableFile) Find_record(key string) *Record {
 	return nil
 }
 
+// prefix pretraga
 func (SSTableFile) List(key string, records_mem *[]*Record) *[]*Record {
 
 	var buffer uint64
@@ -572,6 +549,7 @@ func (SSTableFile) List(key string, records_mem *[]*Record) *[]*Record {
 
 }
 
+// range pretraga
 func (SSTableFile) Range(min string, max string, records_mem *[]*Record) *[]*Record {
 
 	var buffer uint64
@@ -806,6 +784,7 @@ func (SSTableFile) Range(min string, max string, records_mem *[]*Record) *[]*Rec
 
 }
 
+// serijalizacija sstabele
 func (sst *SSTableFile) Encode() *bytes.Buffer {
 
 	var buffer bytes.Buffer
@@ -817,6 +796,7 @@ func (sst *SSTableFile) Encode() *bytes.Buffer {
 	return &buffer
 }
 
+// deserijalizacija sstabele
 func (SSTableFile) Decode(fr *bufio.Reader, lvl int, gen int) *SSTableFile {
 
 	sst := GetSSTableFileParam(lvl, gen)
@@ -842,6 +822,7 @@ func (SSTableFile) Decode(fr *bufio.Reader, lvl int, gen int) *SSTableFile {
 	return sst
 }
 
+// pocetak mergea
 func (SSTableFile) MergeInit() {
 
 	first := -1
@@ -925,6 +906,7 @@ func (SSTableFile) MergeInit() {
 
 }
 
+// merge
 func (SSTableFile) Merge(files *[]fs.FileInfo, next_dir int, index int, this_dir int, del bool) {
 
 	var bloom_sum uint

@@ -45,6 +45,7 @@ func NewRecord(key string, value []byte, Tombstone bool, Timestamp uint64) *Reco
 	return r
 }
 
+// ser
 func (r *Record) Encode() *bytes.Buffer {
 
 	var buffer bytes.Buffer
@@ -59,6 +60,7 @@ func (r *Record) Encode() *bytes.Buffer {
 	return &buffer
 }
 
+// deser
 func Decode(fr *bufio.Reader) *Record {
 
 	r := NewRecord("", make([]byte, 0), false, 0)
