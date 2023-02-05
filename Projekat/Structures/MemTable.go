@@ -89,12 +89,15 @@ func (mem *Memtable) ReconstructWal(data []Record) {
 		success := false
 		if mem.Skiplist == nil {
 			success = mem.BTree.AddRecord(mem.BTree, rec)
+			mem.size++
 		} else {
 			success = mem.Skiplist.AddRecord(rec)
+			mem.size++
 		}
 		if !success {
 			panic("error occured")
 		}
+
 	}
 }
 

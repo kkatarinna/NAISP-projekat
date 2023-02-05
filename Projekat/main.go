@@ -203,37 +203,4 @@ func main() {
 		}
 	}
 
-	// r1 := NewRecord("1_r", []byte("1234"), false, 0)
-	// r2 := NewRecord("2_r", []byte("1234"), false, 0)
-	// r3 := NewRecord("3_r", []byte("1"), false, 0)
-	// // r4 := NewRecord("6_r", []byte("123"), false, 0)
-	// // r5 := NewRecord("7_r", []byte("1234"), false, 0)
-	// // r6 := NewRecord("8_r", []byte("1234"), false, 0)
-
-	// list := make([]*Record, 0)
-
-	// list = append(list, r1)
-	// list = append(list, r2)
-	// list = append(list, r3)
-	// // list = append(list, r4)
-	// // list = append(list, r5)
-	// // list = append(list, r6)
-
-	// sst := NewSSTable()
-
-	// sst.Write_table(&list)
-
-	// (SSTable).MergeInit(SSTable{})
-
-	// (SSTable).Find_record(SSTable{}, "2_r")
-
-	// fmt.Println((SSTable).Find_record(SSTable{}, "8_r"))
-
-	// lista := (SSTable).Range(SSTable{}, "1", "4", &list)
-
-	// for _, elem := range *lista {
-
-	// 	fmt.Println(elem.Key)
-	// }
-
 }
