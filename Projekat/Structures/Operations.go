@@ -18,7 +18,6 @@ func Put(config *Config, mem *Memtable) bool {
 		fmt.Printf("Unesite vrednost >>")
 		var value string
 		fmt.Scanln(&value)
-		fmt.Println("podatak: ", []byte(value))
 
 		successfulWalAppend := AppendRecordWal(config, false, key, []byte(value))
 		if !successfulWalAppend {
@@ -43,9 +42,8 @@ func PutHll(config *Config, mem *Memtable) bool {
 
 	//unosi niz stringova za hll
 	for{
-		fmt.Printf("Unesite vrednost >>")
+		fmt.Printf("Unesite vrednost (x za kraj)>>")
 		fmt.Scanln(&value)
-		fmt.Println("podatak(x za kraj): ", value)
 		if value == "x"{
 			break
 		}
@@ -77,9 +75,8 @@ func PutCms(config *Config, mem *Memtable) bool {
 
 	//unosi niz stringova za cms
 	for{
-		fmt.Printf("Unesite vrednost >>")
+		fmt.Printf("Unesite vrednost (x za kraj)>>")
 		fmt.Scanln(&value)
-		fmt.Println("podatak(x za kraj): ", value)
 		if value == "x"{
 			break
 		}
@@ -330,7 +327,7 @@ func Scan(mem *Memtable){
 
 	file,ssFile,ss := mem.GetSSTable()
 	
-	if(file){
+	if(!file){
 		if(mem.Skiplist != nil){
 
 			listNode := mem.Skiplist.GetAll()
@@ -346,7 +343,7 @@ func Scan(mem *Memtable){
 
 			records:= ssFile.Range(min,max,&listRec)
 			for _,r:= range *records{
-				fmt.Println(r.Value)
+				fmt.Println("kljuc: ",r.Key,", vrednost: ",string(r.Value))
 			}
 			return 
 
@@ -365,7 +362,7 @@ func Scan(mem *Memtable){
 
 			records := ssFile.Range(min,max,&listRec)
 			for _,r:= range *records{
-				fmt.Println(r.Value)
+				fmt.Println("kljuc: ",r.Key,", vrednost: ",string(r.Value))
 			}
 			return 
 
@@ -386,7 +383,7 @@ func Scan(mem *Memtable){
 
 			records:= ss.Range(min,max,&listRec)
 			for _,r:= range *records{
-				fmt.Println(r.Value)
+				fmt.Println("kljuc: ",r.Key,", vrednost: ",string(r.Value))
 			}
 			return 
 
@@ -405,7 +402,7 @@ func Scan(mem *Memtable){
 
 			records := ss.Range(min,max,&listRec)
 			for _,r:= range *records{
-				fmt.Println(r.Value)
+				fmt.Println("kljuc: ",r.Key,", vrednost: ",string(r.Value))
 			}
 			return 
 		}
@@ -421,7 +418,7 @@ func List(mem *Memtable){
 
 	file,ssFile,ss := mem.GetSSTable()
 	
-	if(file){
+	if(!file){
 		if(mem.Skiplist != nil){
 
 			listNode := mem.Skiplist.GetAll()
@@ -437,7 +434,7 @@ func List(mem *Memtable){
 
 			records:= ssFile.List(value,&listRec)
 			for _,r:= range *records{
-				fmt.Println(r.Value)
+				fmt.Println("kljuc: ",r.Key,", vrednost: ",string(r.Value))
 			}
 			return 
 
@@ -456,7 +453,7 @@ func List(mem *Memtable){
 
 			records := ssFile.List(value,&listRec)
 			for _,r:= range *records{
-				fmt.Println(r.Value)
+				fmt.Println("kljuc: ",r.Key,", vrednost: ",string(r.Value))
 			}
 			return 
 
@@ -477,7 +474,7 @@ func List(mem *Memtable){
 
 			records:= ss.List(value,&listRec)
 			for _,r:= range *records{
-				fmt.Println(r.Value)
+				fmt.Println("kljuc: ",r.Key,", vrednost: ",string(r.Value))
 			}
 			return 
 
@@ -496,7 +493,7 @@ func List(mem *Memtable){
 
 			records := ss.List(value,&listRec)
 			for _,r:= range *records{
-				fmt.Println(r.Value)
+				fmt.Println("kljuc: ",r.Key,", vrednost: ",string(r.Value))
 			}
 			return 
 		}

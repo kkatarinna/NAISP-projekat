@@ -723,12 +723,12 @@ func In(key string, records *[]*Record) bool {
 		if key == record.Key {
 			return true
 		}
-
 	}
 
 	return false
 
 }
+
 func (SSTable) MergeInit() {
 
 	first := -1

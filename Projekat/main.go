@@ -66,7 +66,7 @@ func HllMeni(config *Config, tokenbucket*TokenBucket, mem *Memtable, cache *Cach
 		} else if input == "2" {
 			successfulGet, value := GetHll(mem, cache)
 			if successfulGet {
-				fmt.Println("Podatak: ", value)
+				fmt.Println("broj podataka: ", value)
 			} else {
 				fmt.Println("\nPodatak ne postoji")
 			}
@@ -174,7 +174,7 @@ func main() {
 		} else if input == "2" {
 			successfulGet, value := Get(mem, cache)
 			if successfulGet {
-				fmt.Println("Podatak: ", value)
+				fmt.Println("Podatak: ", string(value))
 			} else {
 				fmt.Println("\nPodatak ne postoji")
 			}

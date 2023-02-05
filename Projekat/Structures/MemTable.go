@@ -30,9 +30,9 @@ type Memtable struct {
 
 func (mem *Memtable) GetSSTable() (bool,*SSTable, *SSTableFile){
 	if(mem.ssTable == "file"){
-		return true,&SSTable{},nil
+		return true,nil,&SSTableFile{}
 	}else{
-		return false ,nil ,&SSTableFile{}
+		return false,&SSTable{} ,nil 
 	}
 }
 
