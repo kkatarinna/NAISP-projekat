@@ -920,9 +920,11 @@ func (SSTable) Merge(files *[]fs.FileInfo, next_dir int, index int, this_dir int
 			fw.Flush()
 		}
 
-		for i, file := range *files {
-
+		for i,_ := range files_to_close{
 			files_to_close[i].Close()
+		}
+
+		for _, file := range *files {
 
 			err := os.RemoveAll(MAIN_DIR_FOLDERS + "/LVL" + strconv.Itoa(next_dir-1) + "/" + file.Name() + "/")
 			if err != nil {

@@ -52,6 +52,8 @@ func (bf *BinaryFile) read_bloom() *Bloom {
 
 	bl := Get_bloom(fr)
 
+	file.Close()
+
 	return bl
 
 }
