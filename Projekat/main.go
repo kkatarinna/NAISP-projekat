@@ -203,8 +203,8 @@ func main() {
 		}
 	}
 
-	// r1 := NewRecord("1_r", []byte("1234"), false, 0)
-	// r2 := NewRecord("2_r", []byte("1234"), false, 0)
+	// r1 := NewRecord("113_r", []byte("1234"), false, 0)
+	// r2 := NewRecord("22_r", []byte("1234"), false, 0)
 	// r3 := NewRecord("3_r", []byte("1"), false, 0)
 	// // r4 := NewRecord("6_r", []byte("123"), false, 0)
 	// // r5 := NewRecord("7_r", []byte("1234"), false, 0)
@@ -225,11 +225,11 @@ func main() {
 
 	// (SSTable).MergeInit(SSTable{})
 
-	// (SSTable).Find_record(SSTable{}, "6_r")
+	// (SSTable).Find_record(SSTable{}, "2_r")
 
 	// fmt.Println((SSTable).Find_record(SSTable{}, "8_r"))
 
-	// lista := (SSTableFile).List(SSTableFile{}, "4", &list)
+	// lista := (SSTable).List(SSTable{}, "2", &list)
 
 	// for _, elem := range *lista {
 

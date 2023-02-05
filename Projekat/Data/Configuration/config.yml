@@ -2,7 +2,7 @@ wal_size: 10
 memtable_size: 3
 trashold: 100
 memtable_structure: skip
-ssTable: file
+ssTable: folder
 
 segment_size: 3
 time_interval: 60

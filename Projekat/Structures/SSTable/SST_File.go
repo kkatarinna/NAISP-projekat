@@ -544,7 +544,11 @@ func (SSTableFile) List(key string, records_mem *[]*Record) *[]*Record {
 				}
 
 			} else {
-				break
+				if min_ind != 0 {
+
+					break
+
+				}
 			}
 		}
 
@@ -561,24 +565,6 @@ func (SSTableFile) List(key string, records_mem *[]*Record) *[]*Record {
 		records_data[min_ind] = Decode(readers[min_ind])
 
 	}
-
-	// for {
-
-	// if buffer >= ss.indexFile_offset {
-	// 	break
-	// }
-
-	// 	record := Decode(fr)
-	// 	bytes = record.Encode()
-	// 	buffer += uint64(bytes.Len())
-
-	// 	if strings.HasPrefix(record.Key, key) {
-	// 		if !In(record.Key, &lista) {
-	// 			lista = append(lista, record)
-	// 		}
-
-	// 	}
-	// }
 
 	fmt.Println(lista)
 

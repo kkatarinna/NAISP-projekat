@@ -97,6 +97,8 @@ func (mem *Memtable) ReconstructWal(data []Record) {
 
 func (mem *Memtable) Insert(key string, value []byte) bool {
 
+	fmt.Println(mem.ssTable)
+
 	//ako se koristi bTree
 	if mem.Skiplist == nil {
 		_, _, node2, _ := mem.BTree.Find(key)

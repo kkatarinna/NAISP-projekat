@@ -541,7 +541,11 @@ func (SSTable) List(key string, records_mem *[]*Record) *[]*Record {
 				}
 
 			} else {
-				break
+				if min_ind != 0 {
+
+					break
+
+				}
 			}
 		}
 
@@ -705,6 +709,7 @@ func (SSTable) Range(min string, max string, records_mem *[]*Record) *[]*Record 
 				}
 
 			} else {
+
 				break
 			}
 		}
