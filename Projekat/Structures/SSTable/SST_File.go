@@ -82,9 +82,9 @@ func NewSSTableFile() *SSTableFile {
 
 // }
 
-func RenameFile() {
+func RenameFile(this_dir int) {
 
-	dir := MAIN_DIR_FILES + "/LVL1"
+	dir := MAIN_DIR_FILES + "/LVL" + strconv.Itoa(this_dir)
 	files, _ := ioutil.ReadDir(dir)
 
 	for i := 0; i < len(files); i++ {
@@ -93,8 +93,8 @@ func RenameFile() {
 		gen := string(strArr[4:])
 		replace := dir + "/GEN-" + strconv.Itoa(i+1)
 		os.Rename(dir+"/"+(files)[i].Name(), replace)
-		os.Rename(replace+"/1usertable-"+gen+"-Data.db", replace+"/1usertable-"+strconv.Itoa(i+1)+"-Data.db")
-		os.Rename(replace+"/1usertable-"+gen+"-Meta.txt", replace+"/1usertable-"+strconv.Itoa(i+1)+"-Meta.txt")
+		os.Rename(replace+"/"+strconv.Itoa(this_dir)+"usertable-"+gen+"-Data.db", replace+"/"+strconv.Itoa(this_dir)+"usertable-"+strconv.Itoa(i+1)+"-Data.db")
+		os.Rename(replace+"/"+strconv.Itoa(this_dir)+"usertable-"+gen+"-Meta.txt", replace+"/"+strconv.Itoa(this_dir)+"usertable-"+strconv.Itoa(i+1)+"-Meta.txt")
 
 	}
 
@@ -109,7 +109,7 @@ func GetSSTableFileParam(lvl int, gen int) *SSTableFile {
 
 	sst := &SSTableFile{}
 
-	str := dir + "/1usertable-" + strconv.Itoa(gen) + "-"
+	str := dir + "/" + strconv.Itoa(lvl) + "usertable-" + strconv.Itoa(gen) + "-"
 
 	sst.sstFile = newBinaryFile(str + "Data.db")
 
@@ -402,6 +402,8 @@ func (SSTableFile) List(key string, records_mem *[]*Record) *[]*Record {
 			offset_ind = findOffSum(key, ss.sstFile, ss.sumFile_offset)
 
 			if offset_ind == nil {
+				readers = append(readers, nil)
+				buffers = append(buffers, 0)
 				continue
 			}
 
@@ -437,6 +439,7 @@ func (SSTableFile) List(key string, records_mem *[]*Record) *[]*Record {
 
 		if start_index == nil {
 			readers = append(readers, nil)
+			buffers = append(buffers, 0)
 			continue
 		} else {
 			file, _ := os.Open(ss.sstFile.Filename)
@@ -466,14 +469,16 @@ func (SSTableFile) List(key string, records_mem *[]*Record) *[]*Record {
 
 		for a, record := range records_data {
 
-			if a == 0 && record == nil {
+			if record == nil {
 				continue
 			}
 
-			if record != nil {
+			if a == 0 {
+
 				r_upis = record
 				min_ind = a
 				break
+
 			}
 
 			if buffers[a-1] < ssts[a-1].indexFile_offset {
@@ -489,6 +494,10 @@ func (SSTableFile) List(key string, records_mem *[]*Record) *[]*Record {
 		}
 
 		for i := min_ind + 1; i < len(records_data); i++ {
+
+			if records_data[i] == nil {
+				continue
+			}
 
 			if buffers[i] >= ssts[i-1].indexFile_offset {
 				continue
@@ -514,6 +523,15 @@ func (SSTableFile) List(key string, records_mem *[]*Record) *[]*Record {
 					records_data[min_ind] = Decode(readers[min_ind])
 					min_ind = i
 
+				} else {
+					bytess = *records_data[i].Encode()
+
+					buffers[i] += uint64(bytess.Len())
+					if uint64(buffers[i]) >= ssts[i-1].indexFile_offset {
+						continue
+					}
+					records_data[i] = Decode(readers[i])
+
 				}
 
 			}
@@ -533,14 +551,15 @@ func (SSTableFile) List(key string, records_mem *[]*Record) *[]*Record {
 		bytess = *records_data[min_ind].Encode()
 		buffers[min_ind] += uint64(bytess.Len())
 
-		records_data[min_ind] = Decode(readers[min_ind])
-		if min_ind == 0 {
-			continue
+		if min_ind != 0 {
+			if buffers[min_ind] >= ssts[min_ind-1].indexFile_offset {
+				continue
+			}
+
 		}
 
-		if buffer >= ssts[min_ind-1].indexFile_offset {
-			break
-		}
+		records_data[min_ind] = Decode(readers[min_ind])
+
 	}
 
 	// for {
@@ -636,6 +655,8 @@ func (SSTableFile) Range(min string, max string, records_mem *[]*Record) *[]*Rec
 			offset_ind = findOffSum(min, ss.sstFile, ss.sumFile_offset)
 
 			if offset_ind == nil {
+				readers = append(readers, nil)
+				buffers = append(buffers, 0)
 				continue
 			}
 
@@ -670,6 +691,7 @@ func (SSTableFile) Range(min string, max string, records_mem *[]*Record) *[]*Rec
 
 		if start_index == nil {
 			readers = append(readers, nil)
+			buffers = append(buffers, 0)
 			continue
 		} else {
 			file, _ := os.Open(ss.sstFile.Filename)
@@ -699,15 +721,16 @@ func (SSTableFile) Range(min string, max string, records_mem *[]*Record) *[]*Rec
 
 		for a, record := range records_data {
 
+			if record == nil {
+				continue
+			}
+
 			if a == 0 {
 
-				if record != nil {
-					r_upis = record
-					min_ind = a
-					break
-				} else {
-					continue
-				}
+				r_upis = record
+				min_ind = a
+				break
+
 			}
 
 			if buffers[a] < ssts[a-1].indexFile_offset {
@@ -723,6 +746,10 @@ func (SSTableFile) Range(min string, max string, records_mem *[]*Record) *[]*Rec
 		}
 
 		for i := min_ind + 1; i < len(records_data); i++ {
+
+			if records_data == nil {
+				continue
+			}
 
 			if buffers[i] >= ssts[i-1].indexFile_offset {
 				continue
@@ -740,13 +767,22 @@ func (SSTableFile) Range(min string, max string, records_mem *[]*Record) *[]*Rec
 						records_data[min_ind] = Decode(readers[min_ind])
 					} else {
 						buffers[min_ind] += uint64(bytess.Len())
-						if uint64(buffers[min_ind]) >= ssts[min_ind].indexFile_offset {
+						if uint64(buffers[min_ind]) >= ssts[min_ind-1].indexFile_offset {
 							min_ind = i
 							continue
 						}
 					}
 					records_data[min_ind] = Decode(readers[min_ind])
 					min_ind = i
+
+				} else {
+					bytess = *records_data[i].Encode()
+
+					buffers[i] += uint64(bytess.Len())
+					if uint64(buffers[i]) >= ssts[i-1].indexFile_offset {
+						continue
+					}
+					records_data[i] = Decode(readers[i])
 
 				}
 
@@ -767,14 +803,15 @@ func (SSTableFile) Range(min string, max string, records_mem *[]*Record) *[]*Rec
 		bytess = *records_data[min_ind].Encode()
 		buffers[min_ind] += uint64(bytess.Len())
 
-		records_data[min_ind] = Decode(readers[min_ind])
-		if min_ind == 0 {
-			continue
+		if min_ind != 0 {
+			if buffers[min_ind] >= ssts[min_ind-1].indexFile_offset {
+				continue
+			}
+
 		}
 
-		if buffer >= ssts[min_ind-1].indexFile_offset {
-			break
-		}
+		records_data[min_ind] = Decode(readers[min_ind])
+
 	}
 
 	fmt.Println(lista)
@@ -854,7 +891,8 @@ func (SSTableFile) MergeInit() {
 			slice := files[:len(files)-len(files)%lvlMap[i]]
 			files_next, err2 := ioutil.ReadDir(MAIN_DIR_FILES + "/LVL" + strconv.Itoa(i+1))
 			if err2 != nil {
-				(SSTable).Merge(SSTable{}, &slice, i, len(files)+1, i, false)
+				(SSTableFile).Merge(SSTableFile{}, &slice, i, len(files)+1, i, false)
+				continue
 			}
 
 			if (lvlMap[i+1] - (len(files_next) + (len(slice) / lvlMap[i]) + len(slice)%lvlMap[i])) < 0 {
@@ -886,6 +924,13 @@ func (SSTableFile) MergeInit() {
 
 			}
 
+			if i+1 == MAX_LVL {
+
+				(SSTableFile).Merge(SSTableFile{}, &slice, i+1, len(files_next)+1, i, del)
+				continue
+
+			}
+
 			(SSTableFile).Merge(SSTableFile{}, &slice, next_lvl, index, i, del)
 
 		}
@@ -903,6 +948,7 @@ func (SSTableFile) Merge(files *[]fs.FileInfo, next_dir int, index int, this_dir
 		ssts := make([]*SSTableFile, 0)
 		readers := make([]*bufio.Reader, 0)
 		buffers := make([]uint64, 0)
+		files_to_close := make([]*os.File, 0)
 
 		for _, file := range (*files)[buff : buff+lvlMap[this_dir]] {
 
@@ -914,7 +960,7 @@ func (SSTableFile) Merge(files *[]fs.FileInfo, next_dir int, index int, this_dir
 			if err != nil {
 				fmt.Println("NEMA")
 			}
-			defer file1.Close()
+			files_to_close = append(files_to_close, file1)
 
 			file1.Seek(-32, 2)
 			fr := bufio.NewReader(file1)
@@ -1037,10 +1083,13 @@ func (SSTableFile) Merge(files *[]fs.FileInfo, next_dir int, index int, this_dir
 			}
 			records[min_ind] = Decode(readers[min_ind])
 		}
+		for i, _ := range files_to_close {
+			files_to_close[i].Close()
+		}
 
-		for _, file := range *files {
+		for _, file := range (*files)[buff : buff+lvlMap[this_dir]] {
 
-			err := os.RemoveAll(MAIN_DIR_FILES + "/LVL" + strconv.Itoa(next_dir-1) + "/" + file.Name() + "/")
+			err := os.RemoveAll(MAIN_DIR_FILES + "/LVL" + strconv.Itoa(this_dir) + "/" + file.Name() + "/")
 			if err != nil {
 				fmt.Println(err)
 			}
@@ -1060,8 +1109,8 @@ func (SSTableFile) Merge(files *[]fs.FileInfo, next_dir int, index int, this_dir
 
 	}
 
-	if next_dir == 2 {
-		Rename()
+	if this_dir == 1 || this_dir == 4 {
+		RenameFile(this_dir)
 	}
 
 }

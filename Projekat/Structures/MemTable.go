@@ -15,7 +15,7 @@ type Config struct {
 	SegmentSize       int    `yaml:"segment_size"`
 	TimeInterval      int64  `yaml:"time_interval"`
 	TokensNumber      int64  `yaml:"tokens_number"`
-	ssTable           string `yaml:"ssTable"`
+	SSTable           string `yaml:"ssTable"`
 }
 
 type Memtable struct {
@@ -28,11 +28,11 @@ type Memtable struct {
 	ssTable      string
 }
 
-func (mem *Memtable) GetSSTable() (bool,*SSTable, *SSTableFile){
-	if(mem.ssTable == "file"){
-		return true,nil,&SSTableFile{}
-	}else{
-		return false,&SSTable{} ,nil 
+func (mem *Memtable) GetSSTable() (bool, *SSTable, *SSTableFile) {
+	if mem.ssTable == "file" {
+		return true, nil, &SSTableFile{}
+	} else {
+		return false, &SSTable{}, nil
 	}
 }
 
@@ -42,10 +42,10 @@ func NewMemPar(c *Config) *Memtable {
 		log.Fatal(err)
 	}
 	//sta ce se desiti ako nije btree da li ce overwrite BTree mem
-	mem := &Memtable{Skiplist: nil, BTree: CreateBTree(3), memtableSize: c.MemtableSize, walSize: c.WalSize, trashold: c.Trashold, ssTable: c.ssTable, size: 0}
+	mem := &Memtable{Skiplist: nil, BTree: CreateBTree(3), memtableSize: c.MemtableSize, walSize: c.WalSize, trashold: c.Trashold, ssTable: c.SSTable, size: 0}
 
 	if c.MemtableStructure != "btree" {
-		mem = &Memtable{Skiplist: CreateSkipList(), BTree: nil, memtableSize: c.MemtableSize, walSize: c.WalSize, trashold: c.Trashold, ssTable: c.ssTable, size: 0}
+		mem = &Memtable{Skiplist: CreateSkipList(), BTree: nil, memtableSize: c.MemtableSize, walSize: c.WalSize, trashold: c.Trashold, ssTable: c.SSTable, size: 0}
 	}
 
 	if empty {
@@ -164,16 +164,16 @@ func (mem *Memtable) Find(key string) ([]byte, bool) {
 	} else if mem.Skiplist == nil {
 		found, _, node, _ := mem.BTree.Find(key)
 		if found {
-			for _,data := range node.datas{
-				if(data.key == key){
-					return data.value,data.tombstone
+			for _, data := range node.datas {
+				if data.key == key {
+					return data.value, data.tombstone
 				}
 			}
 		}
-		return nil,false
+		return nil, false
 
 	}
-	return nil,false
+	return nil, false
 
 }
 

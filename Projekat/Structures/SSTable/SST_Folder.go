@@ -137,9 +137,9 @@ func GetSSTableParam(lvl int, gen int) *SSTable {
 
 // }
 
-func Rename() {
+func Rename(this_dir int) {
 
-	dir := MAIN_DIR_FOLDERS + "/LVL1"
+	dir := MAIN_DIR_FOLDERS + "/LVL" + strconv.Itoa(this_dir)
 	files, _ := ioutil.ReadDir(dir)
 
 	for i := 0; i < len(files); i++ {
@@ -148,12 +148,12 @@ func Rename() {
 		gen := string(strArr[4:])
 		replace := dir + "/GEN-" + strconv.Itoa(i+1)
 		os.Rename(dir+"/"+(files)[i].Name(), replace)
-		os.Rename(replace+"/1usertable-"+gen+"-Data.db", replace+"/1usertable-"+strconv.Itoa(i+1)+"-Data.db")
-		os.Rename(replace+"/1usertable-"+gen+"-Index.db", replace+"/1usertable-"+strconv.Itoa(i+1)+"-Index.db")
-		os.Rename(replace+"/1usertable-"+gen+"-Filter.db", replace+"/1usertable-"+strconv.Itoa(i+1)+"-Filter.db")
-		os.Rename(replace+"/1usertable-"+gen+"-Meta.txt", replace+"/1usertable-"+strconv.Itoa(i+1)+"-Meta.txt")
-		os.Rename(replace+"/1usertable-"+gen+"-Summary.db", replace+"/1usertable-"+strconv.Itoa(i+1)+"-Summary.db")
-		os.Rename(replace+"/1usertable-"+gen+"-TOC.txt", replace+"/1usertable-"+strconv.Itoa(i+1)+"-TOC.txt")
+		os.Rename(replace+"/"+strconv.Itoa(this_dir)+"usertable-"+gen+"-Data.db", replace+"/"+strconv.Itoa(this_dir)+"usertable-"+strconv.Itoa(i+1)+"-Data.db")
+		os.Rename(replace+"/"+strconv.Itoa(this_dir)+"usertable-"+gen+"-Index.db", replace+"/"+strconv.Itoa(this_dir)+"usertable-"+strconv.Itoa(i+1)+"-Index.db")
+		os.Rename(replace+"/"+strconv.Itoa(this_dir)+"usertable-"+gen+"-Filter.db", replace+"/"+strconv.Itoa(this_dir)+"usertable-"+strconv.Itoa(i+1)+"-Filter.db")
+		os.Rename(replace+"/"+strconv.Itoa(this_dir)+"usertable-"+gen+"-Meta.txt", replace+"/"+strconv.Itoa(this_dir)+"usertable-"+strconv.Itoa(i+1)+"-Meta.txt")
+		os.Rename(replace+"/"+strconv.Itoa(this_dir)+"usertable-"+gen+"-Summary.db", replace+"/"+strconv.Itoa(this_dir)+"usertable-"+strconv.Itoa(i+1)+"-Summary.db")
+		os.Rename(replace+"/"+strconv.Itoa(this_dir)+"usertable-"+gen+"-TOC.txt", replace+"/"+strconv.Itoa(this_dir)+"usertable-"+strconv.Itoa(i+1)+"-TOC.txt")
 
 	}
 
@@ -525,6 +525,9 @@ func (SSTable) List(key string, records_mem *[]*Record) *[]*Record {
 					records_data[min_ind] = Decode(readers[min_ind])
 					min_ind = i
 
+				} else {
+					records_data[i] = Decode(readers[i])
+
 				}
 
 			}
@@ -765,6 +768,7 @@ func (SSTable) MergeInit() {
 			files_next, err2 := ioutil.ReadDir(MAIN_DIR_FOLDERS + "/LVL" + strconv.Itoa(i+1))
 			if err2 != nil {
 				(SSTable).Merge(SSTable{}, &slice, i, len(files)+1, i, false)
+				continue
 			}
 
 			if (lvlMap[i+1] - (len(files_next) + (len(slice) / lvlMap[i]) + len(slice)%lvlMap[i])) < 0 {
@@ -793,6 +797,13 @@ func (SSTable) MergeInit() {
 				} else {
 					del = false
 				}
+
+			}
+
+			if i+1 == MAX_LVL {
+
+				(SSTable).Merge(SSTable{}, &slice, i+1, len(files_next)+1, i, del)
+				continue
 
 			}
 
@@ -920,13 +931,13 @@ func (SSTable) Merge(files *[]fs.FileInfo, next_dir int, index int, this_dir int
 			fw.Flush()
 		}
 
-		for i,_ := range files_to_close{
+		for i, _ := range files_to_close {
 			files_to_close[i].Close()
 		}
 
-		for _, file := range *files {
+		for _, file := range (*files)[buff : buff+lvlMap[this_dir]] {
 
-			err := os.RemoveAll(MAIN_DIR_FOLDERS + "/LVL" + strconv.Itoa(next_dir-1) + "/" + file.Name() + "/")
+			err := os.RemoveAll(MAIN_DIR_FOLDERS + "/LVL" + strconv.Itoa(this_dir) + "/" + file.Name() + "/")
 			if err != nil {
 				fmt.Println(err)
 			}
@@ -937,8 +948,8 @@ func (SSTable) Merge(files *[]fs.FileInfo, next_dir int, index int, this_dir int
 		sst.write_index(&index_list)
 		merkle_r.FormMerkleTree(sst.metaPath, merkle_b, true)
 
-		if next_dir == 2 {
-			Rename()
+		if this_dir == 1 || this_dir == 4 {
+			Rename(this_dir)
 		}
 	}
 
