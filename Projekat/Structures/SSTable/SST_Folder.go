@@ -808,6 +808,7 @@ func (SSTable) Merge(files *[]fs.FileInfo, next_dir int, index int, this_dir int
 
 	readers := make([]*bufio.Reader, 0)
 	var bloom_sum uint
+	files_to_close := make([]*os.File, 0)
 
 	for buff := 0; buff < len(*files)-1; buff += lvlMap[this_dir] {
 
@@ -823,7 +824,7 @@ func (SSTable) Merge(files *[]fs.FileInfo, next_dir int, index int, this_dir int
 			if err != nil {
 				fmt.Println("NEMA")
 			}
-			defer file1.Close()
+			files_to_close = append(files_to_close, file1)
 			fr := bufio.NewReader(file1)
 			readers = append(readers, fr)
 
@@ -895,9 +896,6 @@ func (SSTable) Merge(files *[]fs.FileInfo, next_dir int, index int, this_dir int
 					}
 
 				}
-				// if records[i].Key > r_upis.Key {
-
-				// }
 			}
 
 			size := fw.Available()
@@ -920,6 +918,10 @@ func (SSTable) Merge(files *[]fs.FileInfo, next_dir int, index int, this_dir int
 			records[min_ind] = Decode(readers[min_ind])
 
 			fw.Flush()
+		}
+
+		for i,_ := range files_to_close{
+			files_to_close[i].Close()
 		}
 
 		for _, file := range *files {

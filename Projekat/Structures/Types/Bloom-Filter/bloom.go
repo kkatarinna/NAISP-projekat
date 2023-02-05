@@ -72,7 +72,7 @@ func (bf *Bloom) Encode() []byte {
 
 func (Bloom) Decode(fr *bufio.Reader) *Bloom {
 
-	bf := NewBloom(0, 0)
+	bf := NewBloom(1, 1)
 	seed := make([]byte, 32)
 
 	err := binary.Read(fr, binary.LittleEndian, &bf.M)
