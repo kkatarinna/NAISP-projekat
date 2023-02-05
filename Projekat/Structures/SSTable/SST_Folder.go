@@ -690,6 +690,10 @@ func (SSTable) Range(min string, max string, records_mem *[]*Record) *[]*Record 
 					records_data[min_ind] = Decode(readers[min_ind])
 					min_ind = i
 
+				} else {
+
+					records_data[i] = Decode(readers[i])
+
 				}
 
 			}
